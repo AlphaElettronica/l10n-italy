@@ -238,8 +238,7 @@ class TestInvoiceDueCost(riba_common.TestRibaCommon):
         self.invoice.action_invoice_open()
         self.assertEqual(self.invoice.state, 'open')
 
-        to_issue_action = self.env.ref('l10n_it_ricevute_bancarie'
-                                       '.action_riba_da_emettere')
+        to_issue_action = self.env.ref('l10n_it_ricevute_bancarie.action_riba_da_emettere')
         to_issue_model = self.env[to_issue_action.res_model]
         to_issue_domain = safe_eval(to_issue_action.domain)
         to_issue_records = to_issue_model.search(to_issue_domain)

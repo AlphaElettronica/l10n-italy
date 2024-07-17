@@ -625,8 +625,7 @@ class ComunicazioneDatiIva(models.Model):
         elif self.dati_trasmissione == 'DTR':
             if not self.check_fatture_ricevute_partners():
                 fatture_ricevute = self.mapped(
-                    'fatture_ricevute_ids.fatture_ricevute_body_ids.'
-                    'invoice_id')
+                    'fatture_ricevute_ids.fatture_ricevute_body_ids.invoice_id')
                 cedenti = fatture_ricevute.mapped('partner_id')
                 first_set_ids = cedenti.ids[:len(cedenti) / 2]
                 second_set_ids = cedenti.ids[len(cedenti) / 2:]
@@ -652,8 +651,7 @@ class ComunicazioneDatiIva(models.Model):
                 return self | comm_2
             elif not self.check_fatture_ricevute_body():
                 fatture_ricevute = self.mapped(
-                    'fatture_ricevute_ids.fatture_ricevute_body_ids.'
-                    'invoice_id')
+                    'fatture_ricevute_ids.fatture_ricevute_body_ids.invoice_id')
                 cedenti = fatture_ricevute.mapped('partner_id')
                 new_set = self.env['account.invoice']
                 old_set = fatture_ricevute

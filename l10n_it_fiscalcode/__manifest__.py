@@ -24,7 +24,7 @@
         "security/ir.model.access.csv",
         'data/res.city.it.code.csv',
         'view/fiscalcode_view.xml',
-        'view/report_invoice_document.xml',
+        # 'view/report_invoice_document.xml',
         'wizard/compute_fc_view.xml',
         'view/company_view.xml'
         ],
