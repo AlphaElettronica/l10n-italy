@@ -3,8 +3,9 @@
 Nella configurazione delle Ri.Ba. è possibile specificare se si tratti di
 'Salvo buon fine' o 'Al dopo incasso', che hanno un flusso completamente diverso.
 
- - Al dopo incasso: nessuna registrazione verrà effettuata automaticamente e le
-   fatture risulteranno pagate solo al momento dell'effettivo incasso.
+ - Al dopo incasso: le fatture risulteranno pagate all'accettazione;
+   l'incasso potrà essere registrato con una normale riconciliazione bancaria,
+   che andrà a chiudere gli "effetti attivi" aperti all'accettazione
  - Salvo buon fine: le registrazioni generate seguiranno la struttura descritta nel
    documento http://goo.gl/jpRhJp
 
@@ -14,6 +15,10 @@ Nella configurazione delle Ri.Ba. è possibile specificare se si tratti di
 utilizzare al momento dell'accettazione della distinta da parte della banca.
 Tale conto deve essere di tipo 'Crediti' (ad esempio "Ri.Ba. all'incasso",
 eventualmente da creare).
+Selezionando 'Salvo buon fine' è necessario impostare il tipo di
+incasso, immediato o a maturazione valuta: questo influisce sulla gestione
+degli insoluti perchè solo nel caso di incasso immediato vengono stornate
+le registrazioni di presentazione della RiBa.
 
 La configurazione relativa alla fase di accredito, verrà usata nel momento in
 cui la banca accredita l'importo della distinta.

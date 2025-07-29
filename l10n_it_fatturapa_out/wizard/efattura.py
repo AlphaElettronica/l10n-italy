@@ -1,9 +1,11 @@
 # Copyright 2020 Giuseppe Borruso
 # Copyright 2020 Marco Colombo
+# Copyright 2024 Alex Comba - Agile Business Group
 import logging
 import os
 from datetime import datetime
 
+import phonenumbers
 from lxml import etree
 from unidecode import unidecode
 
@@ -33,6 +35,15 @@ def format_numbers(number):
     return float_repr(number, max(2, len(cents)))
 
 
+def fpaToEur(amount, invoice, euro, rate=None):
+    currency = invoice.currency_id
+    if currency == euro:
+        return amount
+    elif rate is not None:
+        return amount * (1 / rate)
+    return currency._convert(amount, euro, invoice.company_id, invoice.date, False)
+
+
 class EFatturaOut:
     def get_template_values(self):  # noqa: C901
         """Prepare values and helper functions for the template"""
@@ -56,9 +67,25 @@ class EFatturaOut:
         def format_phone(number):
             if not number:
                 return False
-            number = number.replace(" ", "").replace("/", "").replace(".", "")
-            if len(number) > 4 and len(number) < 13:
-                return number
+            pn = phonenumbers.parse(number, "IT")
+
+            if not phonenumbers.is_valid_number_for_region(pn, "IT"):
+                number = (
+                    "0"
+                    + phonenumbers.format_number(
+                        pn, phonenumbers.PhoneNumberFormat.E164
+                    )[1:]
+                )
+                if len(number) > 4 and len(number) < 13:
+                    return number
+                else:
+                    return False
+
+            str_national_number = phonenumbers.format_number(
+                pn, phonenumbers.PhoneNumberFormat.NATIONAL
+            ).replace(" ", "")
+            if len(str_national_number) > 4 and len(str_national_number) < 13:
+                return str_national_number
             return False
 
         def format_price(line, sign=1, original_currency=False):
@@ -132,8 +159,24 @@ class EFatturaOut:
         def get_causale(invoice):
             res = []
             if invoice.narration:
+                # see: OCA/server-tools/html_text/models/ir_fields_converter.py
+                # after server_tools/html_text is ported to 16.0 we could use:
+                # narration_text = self.env["ir.fields.converter"]
+                #                  .text_from_html(invoice.narration, 40, 100, "...")
+                # meanwhile: 8<
+                from lxml import html
+
+                try:
+                    narration_text = "\n".join(
+                        text.strip()
+                        for text in html.fromstring(invoice.narration).xpath("//text()")
+                    )
+                except Exception:
+                    narration_text = ""
+                # >8 end meanwhile
+
                 # max length of Causale is 200
-                caus_list = invoice.narration.split("\n")
+                caus_list = narration_text.split("\n")
                 for causale in caus_list:
                     if not causale:
                         continue
@@ -193,14 +236,9 @@ class EFatturaOut:
             wiz = self.env["wizard.export.fatturapa"]
             return wiz.getPayments(invoice)
 
-        def fpa_to_eur(amount, invoice):
-            currency = invoice.currency_id
+        def fpa_to_eur(amount, invoice, rate=None):
             euro = self.env.ref("base.EUR")
-            if currency == euro:
-                return amount
-            return currency._convert(
-                amount, euro, invoice.company_id, invoice.date, False
-            )
+            return fpaToEur(amount, invoice, euro, rate)
 
         if self.partner_id.commercial_partner_id.is_pa:
             # check value code
@@ -254,10 +292,30 @@ class EFatturaOut:
         content = env.ref(
             "l10n_it_fatturapa_out.account_invoice_it_FatturaPA_export"
         )._render(template_values)
-        # 14.0 - occorre rimuovere gli spazi tra i tag
-        root = etree.fromstring(content, parser=etree.XMLParser(remove_blank_text=True))
-        # già che ci siamo, validiamo con l'XMLSchema dello SdI
-        errors = list(fpa_schema.iter_errors(root))
+        try:
+            # 14.0 - occorre rimuovere gli spazi tra i tag
+            root = etree.fromstring(
+                content, parser=etree.XMLParser(remove_blank_text=True)
+            )
+            # già che ci siamo, validiamo con l'XMLSchema dello SdI
+            errors = list(fpa_schema.iter_errors(root))
+        except etree.XMLSyntaxError as e:
+            entry = e.error_log.last_error
+            error_msg = _(
+                "Error processing invoice(s) %(invoices)s.\n\n"
+                "Error message: %(error)s\n\n",
+                invoices=", ".join(
+                    inv.display_name for inv in template_values["invoices"]
+                ),
+                error=entry.message,
+            )
+            # when there is a char that belongs to
+            # https://en.wikipedia.org/wiki/List_of_Unicode_characters#Control_codes
+            if entry.type_name == "ERR_INVALID_CHAR":
+                lines = [line for line in content.decode().split("\n")]
+                line = lines[entry.line - 1]
+                error_msg += _("Line affected:  %(line)s\n", line=line)
+            raise UserError(error_msg)
         if errors:
             # XXX - da migliorare?
             # i controlli precedenti dovrebbero escludere errori di sintassi XML

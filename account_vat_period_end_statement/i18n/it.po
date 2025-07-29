@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: Odoo Server 12.0+e\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2019-04-09 12:56+0000\n"
-"PO-Revision-Date: 2024-03-04 07:40+0000\n"
+"PO-Revision-Date: 2025-05-12 09:24+0000\n"
 "Last-Translator: mymage <stefano.consolaro@mymage.it>\n"
 "Language-Team: \n"
 "Language: it\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.17\n"
+"X-Generator: Weblate 5.10.4\n"
 
 #. module: account_vat_period_end_statement
 #: model:ir.model.fields.selection,name:account_vat_period_end_statement.selection__account_vat_period_end_statement__advance_computation_method__4
@@ -26,6 +26,16 @@ msgstr "\"4\" (soggetti particolari)"
 #: model_terms:ir.ui.view,arch_db:account_vat_period_end_statement.report_vatperiodendstatement_document
 msgid "&amp;nbsp;("
 msgstr "&amp;nbsp;("
+
+#. module: account_vat_period_end_statement
+#: model_terms:ir.ui.view,arch_db:account_vat_period_end_statement.report_vatperiodendstatement_document
+msgid "(credit)"
+msgstr "(credito)"
+
+#. module: account_vat_period_end_statement
+#: model_terms:ir.ui.view,arch_db:account_vat_period_end_statement.report_vatperiodendstatement_document
+msgid "(debit)"
+msgstr "(debito)"
 
 #. module: account_vat_period_end_statement
 #: model_terms:ir.ui.view,arch_db:account_vat_period_end_statement.view_account_vat_period_end_statement
@@ -41,11 +51,6 @@ msgstr "<span>Riepilogo</span>"
 #: model_terms:ir.ui.view,arch_db:account_vat_period_end_statement.report_vatperiodendstatement_document
 msgid "<strong>Total Credit</strong>"
 msgstr "<strong>Credito totale</strong>"
-
-#. module: account_vat_period_end_statement
-#: model_terms:ir.ui.view,arch_db:account_vat_period_end_statement.report_vatperiodendstatement_document
-msgid "<strong>Total Statement</strong>"
-msgstr "<strong>Totale liquidazione</strong>"
 
 #. module: account_vat_period_end_statement
 #: model_terms:ir.ui.view,arch_db:account_vat_period_end_statement.report_vatperiodendstatement_document
@@ -208,7 +213,9 @@ msgid "Credit Account Lines"
 msgstr "Righe conti di credito"
 
 #. module: account_vat_period_end_statement
+#: code:addons/account_vat_period_end_statement/models/account.py:0
 #: model:ir.model.fields,field_description:account_vat_period_end_statement.field_account_vat_period_end_statement__credit_vat_account_line_ids
+#, python-format
 msgid "Credit VAT"
 msgstr "IVA a credito"
 
@@ -240,7 +247,9 @@ msgid "Debit Account Lines"
 msgstr "Righe conti di debito"
 
 #. module: account_vat_period_end_statement
+#: code:addons/account_vat_period_end_statement/models/account.py:0
 #: model:ir.model.fields,field_description:account_vat_period_end_statement.field_account_vat_period_end_statement__debit_vat_account_line_ids
+#, python-format
 msgid "Debit VAT"
 msgstr "IVA a debito"
 
@@ -302,9 +311,11 @@ msgid "Draft"
 msgstr "Bozza"
 
 #. module: account_vat_period_end_statement
+#: code:addons/account_vat_period_end_statement/models/account.py:0
 #: model:ir.model.fields,field_description:account_vat_period_end_statement.field_account_vat_period_end_statement__interests_debit_vat_account_id
 #: model_terms:ir.ui.view,arch_db:account_vat_period_end_statement.report_vatperiodendstatement_document
 #: model_terms:ir.ui.view,arch_db:account_vat_period_end_statement.view_account_vat_period_end_statement
+#, python-format
 msgid "Due interests"
 msgstr "Interessi dovuti"
 
@@ -411,6 +422,12 @@ msgid "Last printed page"
 msgstr "Ultima pagina stampata"
 
 #. module: account_vat_period_end_statement
+#: code:addons/account_vat_period_end_statement/models/account.py:0
+#, python-format
+msgid "Other VAT Credits / Debits"
+msgstr "Altri Crediti / Debiti per IVA"
+
+#. module: account_vat_period_end_statement
 #: model:ir.model.fields,field_description:account_vat_period_end_statement.field_account_vat_period_end_statement__generic_vat_account_line_ids
 msgid "Other VAT Credits / Debits or Tax Compensations"
 msgstr "Altri Crediti / Debiti per IVA o compensazioni di imposta"
@@ -474,8 +491,10 @@ msgid "Periods"
 msgstr "Periodi"
 
 #. module: account_vat_period_end_statement
+#: code:addons/account_vat_period_end_statement/models/account.py:0
 #: model:ir.model.fields,field_description:account_vat_period_end_statement.field_account_vat_period_end_statement__previous_credit_vat_account_id
 #: model_terms:ir.ui.view,arch_db:account_vat_period_end_statement.view_account_vat_period_end_statement
+#, python-format
 msgid "Previous Credits VAT"
 msgstr "IVA crediti precedenti"
 
@@ -485,8 +504,10 @@ msgid "Previous Credits VAT Amount"
 msgstr "Importo IVA crediti precedenti"
 
 #. module: account_vat_period_end_statement
+#: code:addons/account_vat_period_end_statement/models/account.py:0
 #: model:ir.model.fields,field_description:account_vat_period_end_statement.field_account_vat_period_end_statement__previous_debit_vat_account_id
 #: model_terms:ir.ui.view,arch_db:account_vat_period_end_statement.view_account_vat_period_end_statement
+#, python-format
 msgid "Previous Debits VAT"
 msgstr "IVA debiti precedenti"
 
@@ -608,9 +629,21 @@ msgid "Tax Authority Partner"
 msgstr "Partner Erario"
 
 #. module: account_vat_period_end_statement
+#: code:addons/account_vat_period_end_statement/models/account.py:0
+#, python-format
+msgid "Tax Authority VAT"
+msgstr "IVA Erario"
+
+#. module: account_vat_period_end_statement
 #: model:ir.model.fields,field_description:account_vat_period_end_statement.field_account_vat_period_end_statement__authority_vat_account_id
 msgid "Tax Authority VAT Account"
 msgstr "Conto IVA Erario"
+
+#. module: account_vat_period_end_statement
+#: code:addons/account_vat_period_end_statement/models/account.py:0
+#, python-format
+msgid "Tax Credits"
+msgstr "Crediti d'imposta"
 
 #. module: account_vat_period_end_statement
 #: model:ir.model.fields,field_description:account_vat_period_end_statement.field_account_vat_period_end_statement__tax_credit_account_id
@@ -738,20 +771,11 @@ msgstr "Non è possibile eliminare una liquidazione confermata o pagata"
 msgid "You must select documents from the same company!"
 msgstr "Bisogna selezionare documenti della stessa azienda!"
 
+#~ msgid "<strong>Total Statement</strong>"
+#~ msgstr "<strong>Totale liquidazione</strong>"
+
 #~ msgid "Account Lines"
 #~ msgstr "Righe conti"
-
-#, python-format
-#~ msgid "Other VAT Credits / Debits"
-#~ msgstr "Altri Crediti / Debiti per IVA"
-
-#, python-format
-#~ msgid "Tax Authority VAT"
-#~ msgstr "IVA Erario"
-
-#, python-format
-#~ msgid "Tax Credits"
-#~ msgstr "Crediti d'imposta"
 
 #~ msgid "Down payment due"
 #~ msgstr "Acconto dovuto"

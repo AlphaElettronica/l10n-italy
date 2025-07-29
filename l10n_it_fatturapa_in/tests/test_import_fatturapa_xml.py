@@ -5,6 +5,7 @@ from datetime import date
 
 from psycopg2 import IntegrityError
 
+from odoo import fields
 from odoo.exceptions import UserError, ValidationError
 from odoo.modules import get_module_resource
 from odoo.tests import Form
@@ -207,18 +208,6 @@ class TestFatturaPAXMLValidation(FatturapaCommon):
         self.assertEqual(invoice.e_invoice_validation_error, False)
         self.assertEqual(invoice.invoice_line_ids[0].admin_ref, "D122353")
 
-    def test_08_xml_import(self):
-        # using ImportoTotaleDocumento
-        res = self.run_wizard("test8", "IT05979361218_005.xml")
-        invoice_id = res.get("domain")[0][2][0]
-        invoice = self.invoice_model.browse(invoice_id)
-        self.assertEqual(invoice.ref, "FT/2015/0010")
-        self.assertEqual(invoice.payment_reference, "FT/2015/0010")
-        self.assertAlmostEqual(invoice.amount_total, 1288.61)
-        self.assertFalse(invoice.inconsistencies)
-        # allow following test to reuse the same XML file
-        invoice.ref = invoice.payment_reference = "14081"
-
     def test_08_xml_import_no_account(self):
         """Check that a useful error message is raised when
         the credit account is missing in journal."""
@@ -243,21 +232,11 @@ class TestFatturaPAXMLValidation(FatturapaCommon):
         self.assertIn(journal.display_name, ue.exception.args[0])
         self.assertIn(company.display_name, ue.exception.args[0])
 
-        discount_amount = -143.18
-
         # Restore the property and import the invoice
         expense_default_property.res_id = False
         res = self.run_wizard("test8_with_property", "IT05979361218_005.xml")
         invoice_id = res.get("domain")[0][2][0]
         invoice = self.invoice_model.browse(invoice_id)
-        invoice_lines = invoice.invoice_line_ids
-        discount_line = invoice_lines.filtered(
-            lambda line: line.price_unit == discount_amount
-        )
-        self.assertEqual(
-            discount_line.account_id,
-            expense_default_property.get_by_record(),
-        )
         # allow following code to reuse the same XML file
         invoice.ref = invoice.payment_reference = "14083"
 
@@ -266,32 +245,9 @@ class TestFatturaPAXMLValidation(FatturapaCommon):
         res = self.run_wizard("test8_with_journal", "IT05979361218_005.xml")
         invoice_id = res.get("domain")[0][2][0]
         invoice = self.invoice_model.browse(invoice_id)
-        invoice_lines = invoice.invoice_line_ids
-        discount_line = invoice_lines.filtered(
-            lambda line: line.price_unit == discount_amount
-        )
-        self.assertEqual(
-            discount_line.account_id,
-            journal_account,
-        )
         self.assertTrue(invoice)
         # allow following tests to reuse the same XML file
         invoice.ref = invoice.payment_reference = "14084"
-
-    def test_09_xml_import(self):
-        # using DatiGeneraliDocumento.ScontoMaggiorazione without
-        # ImportoTotaleDocumento
-        # add test file name case sensitive
-        res = self.run_wizard("test9", "IT05979361218_006.XML")
-        invoice_id = res.get("domain")[0][2][0]
-        invoice = self.invoice_model.browse(invoice_id)
-        self.assertEqual(invoice.ref, "FT/2015/0011")
-        self.assertEqual(invoice.payment_reference, "FT/2015/0011")
-        self.assertAlmostEqual(invoice.amount_total, 1288.61)
-        self.assertEqual(
-            invoice.inconsistencies,
-            "Computed amount untaxed 1030.42 is different from" " summary data 1173.6",
-        )
 
     def test_10_xml_import(self):
         # Fix Date format
@@ -839,13 +795,27 @@ class TestFatturaPAXMLValidation(FatturapaCommon):
         # IT01234567890_FPR14.xml should be tested manually
 
     def test_48_xml_import(self):
-        # my company bank account is the same as the one in XML:
+        # bank account already exists for another partner
         # invoice creation must not be blocked
+        to_unlink = []
+        bank = self.env["res.bank"].create(
+            {
+                "bic": "BCITITMM",
+                "name": "Other Bank",
+            }
+        )
+        to_unlink.append(bank)
+        partner = self.env["res.partner"].create(
+            {
+                "name": "Some Other Company",
+            }
+        )
+        to_unlink.append(partner)
         self.env["res.partner.bank"].create(
             {
                 "acc_number": "IT59R0100003228000000000622",
-                "company_id": self.env.company.id,
-                "partner_id": self.env.company.partner_id.id,
+                "company_id": self.env.user.company_id.id,
+                "partner_id": partner.id,
             }
         )
         res = self.run_wizard("test48", "IT01234567890_FPR15.xml")
@@ -855,6 +825,8 @@ class TestFatturaPAXMLValidation(FatturapaCommon):
             "Bank account IT59R0100003228000000000622 already exists"
             in invoice.inconsistencies
         )
+        for model in to_unlink:
+            model.unlink()
 
     def test_49_xml_import(self):
         # this method name is used in 12.0
@@ -1003,6 +975,38 @@ class TestFatturaPAXMLValidation(FatturapaCommon):
         self.assertEqual(invoice.invoice_line_ids[0].price_subtotal, 1.5)
         self.assertEqual(invoice.move_type, "in_refund")
 
+    def test_55_xml_import(self):
+        # Payments may refer to our own bank account (SEPA)
+        to_unlink = []
+        bank = self.env["res.bank"].create(
+            {
+                "bic": "BCITITMM",
+                "name": "Other Bank",
+            }
+        )
+        to_unlink.append(bank)
+        bank_account = self.env["res.partner.bank"].create(
+            {
+                "acc_number": "IT59R0100003228000000000622",
+                "company_id": self.env.user.company_id.id,
+                "partner_id": self.env.user.company_id.partner_id.id,
+            }
+        )
+        to_unlink.append(bank_account)
+        res = self.run_wizard("test55", "IT01234567890_FPR15.xml")
+        invoice_id = res.get("domain")[0][2][0]
+        invoice = self.invoice_model.browse(invoice_id)
+        self.assertIn(
+            invoice.fatturapa_payments[0].payment_methods[0].payment_bank_iban,
+            invoice.company_id.partner_id.bank_ids.mapped("acc_number"),
+        )
+        self.assertFalse(
+            "Bank account IT59R0100003228000000000622 already exists"
+            in invoice.inconsistencies
+        )
+        for model in to_unlink:
+            model.unlink()
+
     def test_01_xml_link(self):
         """
         E-invoice lines are created.
@@ -1150,6 +1154,106 @@ class TestFatturaPAXMLValidation(FatturapaCommon):
         invoices = self.env[import_action["res_model"]].search(import_action["domain"])
         e_invoice = invoices.fatturapa_attachment_in_id
         self.assertTrue(e_invoice.ir_attachment_id.read())
+
+    def test_access_other_user_e_invoice_attachments(self):
+        """A user can see the e-invoice attachments created by other users."""
+        # Arrange
+        access_right_group_xmlid = "base.group_erp_manager"
+        user = self.env.user
+        user.groups_id -= self.env.ref("base.group_system")
+        user.groups_id -= self.env.ref(access_right_group_xmlid)
+        other_user = self.env["res.users"].create(
+            {
+                "name": "Attachment User",
+                "login": "attachment_user",
+                "groups_id": [(6, 0, user.groups_id.ids)],
+            }
+        )
+        # pre-condition
+        self.assertFalse(user.has_group(access_right_group_xmlid))
+        self.assertNotEqual(user, other_user)
+        import_action = self.run_wizard(
+            "access_other_user_e_invoice_attachments", "IT02780790107_11004.xml"
+        )
+        # Assert
+        with self.with_user(other_user.login):
+            invoices = self.env[import_action["res_model"]].search(
+                import_action["domain"]
+            )
+            e_invoice = invoices.fatturapa_doc_attachments
+            self.assertTrue(e_invoice.ir_attachment_id.read())
+
+    def test_increased_decimal_precision(self):
+        """
+        Increase price decimal precision during import:
+        computation of line's price is more accurate.
+        """
+        res = self.run_wizard(
+            "increased_decimal_precision",
+            "IT01234567890_FPR16.xml",
+            wiz_values={
+                "price_decimal_digits": 3,
+            },
+        )
+
+        # The new precision allows to compute the correct amount
+        invoice = self.invoice_model.search(res["domain"])
+        expected_invoice_values = {
+            "amount_untaxed": 66.79,
+            "amount_tax": 14.69,
+            "amount_total": 81.48,
+        }
+        self.assertRecordValues(
+            invoice,
+            [
+                expected_invoice_values,
+            ],
+        )
+        invoice_line = invoice.invoice_line_ids
+        expected_invoice_line_values = {
+            "price_subtotal": 66.79,
+            "price_total": 81.48,
+        }
+        self.assertRecordValues(
+            invoice_line,
+            [
+                expected_invoice_line_values,
+            ],
+        )
+
+        # Trigger amounts recomputation because:
+        # date triggers an update on date_due
+        # date_due triggers an update on needed_terms
+        # needed_terms needs amount_total_signed
+        with Form(invoice) as invoice_form:
+            invoice_form.date = fields.Date.today()
+
+        # The correct amount is kept
+        self.assertRecordValues(
+            invoice,
+            [
+                expected_invoice_values,
+            ],
+        )
+        self.assertRecordValues(
+            invoice_line,
+            [
+                expected_invoice_line_values,
+            ],
+        )
+
+    def test_ignore_global_discount(self):
+        """The nodes
+        - DatiGeneraliDocumento/ScontoMaggiorazione
+        - DatiGeneraliDocumento/ImportoTotaleDocumento
+        are not considered for invoice validation/consistency.
+        """
+        res = self.run_wizard("ignore_global_discount", "IT08973230967_6zZcm.xml")
+        invoice = self.invoice_model.search(res["domain"])
+        self.assertFalse(invoice.inconsistencies)
+        self.assertEqual(invoice.amount_untaxed, 23.27)
+        self.assertEqual(invoice.amount_tax, 5.12)
+        self.assertEqual(invoice.amount_total, 28.39)
 
 
 class TestFatturaPAEnasarco(FatturapaCommon):

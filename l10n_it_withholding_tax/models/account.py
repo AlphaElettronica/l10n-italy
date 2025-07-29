@@ -1,10 +1,12 @@
 # Copyright 2015 Alessandro Camilli (<http://www.openforce.it>)
 # Copyright 2018 Lorenzo Battistini - Agile Business Group
 # Copyright 2023 Simone Rubino - TAKOBI
+# Copyright 2024 Simone Rubino - Aion Tech
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
 from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
+from odoo.fields import first
 from odoo.tools.float_utils import float_compare, float_round
 
 
@@ -40,46 +42,77 @@ class AccountFullReconcile(models.Model):
 class AccountPartialReconcile(models.Model):
     _inherit = "account.partial.reconcile"
 
+    def _wt_get_move_lines(self, vals):
+        move_line_model = self.env["account.move.line"]
+        debit_move_line = move_line_model.browse(vals.get("debit_move_id"))
+        credit_move_line = move_line_model.browse(vals.get("credit_move_id"))
+        return debit_move_line, credit_move_line
+
+    def _wt_get_paying_invoice(self, move_lines):
+        move_lines = move_lines.exists()
+        invoices = move_lines.move_id.filtered(lambda move: move.is_invoice())
+        # If we are reconciling a vendor bill and its refund,
+        # we do not need to generate Withholding Tax Moves
+        # or change the reconciliation amount
+        in_refunding = invoices._wt_in_refunding()
+        if not in_refunding:
+            paying_invoice = first(invoices)
+        else:
+            paying_invoice = self.env["account.move"].browse()
+        return paying_invoice
+
     @api.model
     def create(self, vals):
         # In case of WT The amount of reconcile mustn't exceed the tot net
         # amount. The amount residual will be full reconciled with amount net
         # and amount wt created with payment
-        invoice = False
-        ml_ids = []
-        if vals.get("debit_move_id"):
-            ml_ids.append(vals.get("debit_move_id"))
-        if vals.get("credit_move_id"):
-            ml_ids.append(vals.get("credit_move_id"))
-        move_lines = self.env["account.move.line"].browse(ml_ids)
-        invoice = move_lines.filtered(lambda x: x.exists()).move_id.filtered(
-            lambda x: x.is_invoice()
-        )
-        # XXX
-        # the following code mimics 12.0 behaviour; probably it's not correct
-        if invoice:
-            invoice = invoice[0]
-
+        debit_move_line, credit_move_line = self._wt_get_move_lines(vals)
+        move_lines = debit_move_line | credit_move_line
+        paying_invoice = self._wt_get_paying_invoice(move_lines)
+        reconcile_existing = False
         # Limit value of reconciliation
-        if invoice and invoice.withholding_tax and invoice.amount_net_pay:
+        if (
+            paying_invoice
+            and paying_invoice.withholding_tax
+            and paying_invoice.amount_net_pay_residual
+        ):
             # We must consider amount in foreign currency, if present
             # Note that this is always executed, for every reconciliation.
             # Thus, we must not change amount when not in withholding tax case
             amount = vals.get("amount_currency") or vals.get("amount")
-            digits_rounding_precision = invoice.company_id.currency_id.rounding
+            digits_rounding_precision = paying_invoice.company_id.currency_id.rounding
+            if amount == 0.0:
+                # it's a reconciliation with an existing move line
+                if (
+                    float_compare(
+                        abs(debit_move_line.amount_residual),
+                        abs(credit_move_line.amount_residual),
+                        precision_rounding=digits_rounding_precision,
+                    )
+                    == 0
+                ):
+                    amount = abs(move_lines[0].amount_residual)
+                    vals.update(
+                        {
+                            "amount": amount,
+                            "credit_amount_currency": amount,
+                            "debit_amount_currency": amount,
+                        }
+                    )
+                    reconcile_existing = True
             if (
                 float_compare(
                     amount,
-                    invoice.amount_net_pay,
+                    paying_invoice.amount_net_pay_residual,
                     precision_rounding=digits_rounding_precision,
                 )
                 == 1
             ):
                 vals.update(
                     {
-                        "amount": invoice.amount_net_pay,
-                        "credit_amount_currency": invoice.amount_net_pay,
-                        "debit_amount_currency": invoice.amount_net_pay,
+                        "amount": paying_invoice.amount_net_pay_residual,
+                        "credit_amount_currency": paying_invoice.amount_net_pay_residual,
+                        "debit_amount_currency": paying_invoice.amount_net_pay_residual,
                     }
                 )
 
@@ -87,30 +120,47 @@ class AccountPartialReconcile(models.Model):
         reconcile = super(AccountPartialReconcile, self).create(vals)
         # Avoid re-generate wt moves if the move line is an wt move.
         # It's possible if the user unreconciles a wt move under invoice
-        ld = self.env["account.move.line"].browse(vals.get("debit_move_id"))
-        lc = self.env["account.move.line"].browse(vals.get("credit_move_id"))
 
-        move_ids = ld.move_id | lc.move_id
+        moves = move_lines.move_id
         lines = self.env["account.move.line"].search(
-            [("withholding_tax_generated_by_move_id", "in", move_ids.ids)]
+            [
+                ("withholding_tax_generated_by_move_id", "in", moves.ids),
+                ("balance", "=", abs(vals.get("amount"))),
+            ]
         )
+        if not lines:
+            for move in moves.filtered(lambda x: x.withholding_tax_amount):
+                lines = self.env["account.move.line"].search(
+                    [
+                        ("withholding_tax_generated_by_move_id", "in", moves.ids),
+                        ("balance", "=", abs(move.withholding_tax_amount)),
+                        ("name", "=ilike", move.name),
+                    ]
+                )
+                if lines:
+                    reconcile_existing = True
         if lines:
             is_wt_move = True
-            reconcile.generate_wt_moves(is_wt_move, lines)
+            if not reconcile_existing:
+                reconcile.generate_wt_moves(is_wt_move, lines)
         else:
             is_wt_move = False
-        # Wt moves creation
-        if (
-            invoice.withholding_tax_line_ids
-            and not self._context.get("no_generate_wt_move")
-            and not is_wt_move
-            and (
-                ld.account_internal_type in ("receivable", "payable")
-                or lc.account_internal_type in ("receivable", "payable")
-            )
-        ):
-            # and not wt_existing_moves\
-            reconcile.generate_wt_moves(is_wt_move)
+
+        if paying_invoice:
+            # Wt moves creation
+            if (
+                paying_invoice.withholding_tax_line_ids
+                and not self.env.context.get("no_generate_wt_move")
+                and not is_wt_move
+                and (
+                    debit_move_line.account_internal_type in ("receivable", "payable")
+                    or credit_move_line.account_internal_type
+                    in ("receivable", "payable")
+                )
+            ):
+                # and not wt_existing_moves\
+                if not reconcile_existing:
+                    reconcile.generate_wt_moves(is_wt_move)
 
         return reconcile
 
@@ -135,7 +185,7 @@ class AccountPartialReconcile(models.Model):
         wt_statements = wt_statement_obj.browse()
         rec_line_statement = rec_line_model.browse()
         for rec_line in rec_lines:
-            domain = [("move_id", "=", rec_line.move_id.id)]
+            domain = [("invoice_id", "=", rec_line.move_id.id)]
             wt_statements = wt_statement_obj.search(domain)
             if wt_statements:
                 rec_line_statement = rec_line
@@ -453,7 +503,6 @@ class AccountMove(models.Model):
             val = {
                 "wt_type": "",
                 "date": self.date,
-                "move_id": self.id,
                 "invoice_id": self.id,
                 "partner_id": self.partner_id.id,
                 "withholding_tax_id": inv_wt.withholding_tax_id.id,
@@ -490,7 +539,7 @@ class AccountMove(models.Model):
         if posted_moves:
             statements = self.env["withholding.tax.statement"].search(
                 [
-                    ("move_id", "in", posted_moves.ids),
+                    ("invoice_id", "in", posted_moves.ids),
                 ],
             )
             statements.unlink()
@@ -500,6 +549,12 @@ class AccountMove(models.Model):
         if new_state in self._wt_unlink_statements_move_states():
             self._wt_unlink_statements()
         return super().write(vals)
+
+    def _wt_in_refunding(self):
+        return len(self) == 2 and set(self.mapped("move_type")) == {
+            "in_invoice",
+            "in_refund",
+        }
 
 
 class AccountMoveLine(models.Model):
@@ -537,9 +592,42 @@ class AccountMoveLine(models.Model):
             # Delete wt move
             for wt_move in wt_mls.mapped("move_id"):
                 wt_move.button_draft()
-                wt_move.unlink()
+                wt_move.with_context(force_delete=True).unlink()
 
         return super(AccountMoveLine, self).remove_move_reconcile()
+
+    def _prepare_reconciliation_partials(self):
+        wt_move_lines = self.filtered(lambda x: x.withholding_tax_amount != 0)
+        if not wt_move_lines:
+            return super()._prepare_reconciliation_partials()
+        credit_lines = self.filtered(lambda line: line.credit)
+        debit_line_ids = (self - credit_lines).ids
+        partials_vals_list = []
+        for credit_line in credit_lines:
+            next_debit_line_id = debit_line_ids.pop(0) if debit_line_ids else False
+            if next_debit_line_id:
+                debit_line = self.browse(next_debit_line_id)
+            total_amount_payment = debit_line.balance
+            invoices = (credit_line | debit_line).move_id.filtered(
+                lambda move: move.is_invoice()
+            )
+            in_refunding = invoices._wt_in_refunding()
+            residual_amount = credit_line.move_id.amount_net_pay_residual
+            if not in_refunding and total_amount_payment > residual_amount:
+                total_amount_payment -= residual_amount
+            else:
+                residual_amount = total_amount_payment
+            partials_vals_list.append(
+                {
+                    "amount": residual_amount,
+                    "debit_amount_currency": residual_amount,
+                    "credit_amount_currency": residual_amount,
+                    "debit_move_id": debit_line.id,
+                    "credit_move_id": credit_line.id,
+                }
+            )
+
+        return partials_vals_list
 
     @api.model
     def _default_withholding_tax(self):

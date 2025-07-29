@@ -6,7 +6,6 @@
 # Copyright (C) 2012-2017 Lorenzo Battistini - Agile Business Group
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl).
 
-from datetime import date
 
 from odoo import _, api, fields, models
 from odoo.exceptions import Warning as UserError
@@ -33,6 +32,12 @@ class RibaList(models.Model):
             for line in riba.line_ids:
                 move_lines |= line.payment_ids
             riba.payment_ids = move_lines
+
+    def _compute_total_amount(self):
+        for riba in self:
+            riba.total_amount = 0.0
+            for line in riba.line_ids:
+                riba.total_amount += line.amount
 
     _name = "riba.distinta"
     _description = "C/O Slip"
@@ -90,7 +95,16 @@ class RibaList(models.Model):
     )
     date_accepted = fields.Date("Acceptance Date")
     date_accreditation = fields.Date("Credit Date")
-    date_paid = fields.Date("Payment Date", readonly=True)
+    date_paid = fields.Date(
+        string="Payment Date",
+        help="Default date for payments.",
+        readonly=True,
+        states={
+            "credited": [
+                ("readonly", False),
+            ],
+        },
+    )
     date_unsolved = fields.Date("Past Due Date", readonly=True)
     company_id = fields.Many2one(
         "res.company",
@@ -125,6 +139,11 @@ class RibaList(models.Model):
         required=True,
         default=lambda self: fields.Date.context_today(self),
         help="Keep empty to use the current date.",
+    )
+
+    total_amount = fields.Float(
+        string="Amount",
+        compute="_compute_total_amount",
     )
 
     def action_riba_export(self):
@@ -177,10 +196,18 @@ class RibaList(models.Model):
             distinta.state = "cancel"
 
     def settle_all_line(self):
-        for riba_list in self:
-            for line in riba_list.line_ids:
-                if line.state == "accredited":
-                    line.riba_line_settlement()
+        payment_wizard_action = (
+            self.env["riba.payment.multiple"]
+            .with_context(
+                active_ids=self.ids,
+            )
+            .get_formview_action()
+        )
+        payment_wizard_action.update(
+            name=_("Settle lines"),
+            target="new",
+        )
+        return payment_wizard_action
 
     @api.onchange("date_accepted", "date_accreditation")
     def _onchange_date(self):
@@ -216,6 +243,11 @@ class RibaList(models.Model):
             for line in riba_list.line_ids:
                 line.state = "draft"
 
+    def action_open_lines(self):
+        action = self.env.ref("l10n_it_ricevute_bancarie.detail_riba_action").read()[0]
+        action["domain"] = [("distinta_id", "=", self.id)]
+        return action
+
 
 class RibaListLine(models.Model):
     _name = "riba.distinta.line"
@@ -230,21 +262,15 @@ class RibaListLine(models.Model):
             line.invoice_number = ""
             for move_line in line.move_line_ids:
                 line.amount += move_line.amount
+                move_date = move_line.move_line_id.move_id.invoice_date
+                if move_date:
+                    move_date = str(
+                        fields.Date.from_string(move_date).strftime("%d/%m/%Y")
+                    )
                 if not line.invoice_date:
-                    line.invoice_date = str(
-                        fields.Date.from_string(
-                            move_line.move_line_id.move_id.invoice_date
-                        ).strftime("%d/%m/%Y")
-                    )
+                    line.invoice_date = move_date
                 else:
-                    line.invoice_date = "{}, {}".format(
-                        line.invoice_date,
-                        str(
-                            fields.Date.from_string(
-                                move_line.move_line_id.move_id.invoice_date
-                            ).strftime("%d/%m/%Y")
-                        ),
-                    )
+                    line.invoice_date = f"{line.invoice_date}, {move_date}"
                 if not line.invoice_number:
                     line.invoice_number = str(
                         move_line.move_line_id.move_id.name
@@ -379,16 +405,20 @@ class RibaListLine(models.Model):
     def confirm(self):
         move_model = self.env["account.move"]
         move_line_model = self.env["account.move.line"]
+        today = fields.Date.context_today(self)
         for line in self:
             journal = line.distinta_id.config_id.acceptance_journal_id
             total_credit = 0.0
+            date_accepted = line.distinta_id.date_accepted
+            if not date_accepted:
+                line.distinta_id.date_accepted = date_accepted = line.due_date or today
             move = move_model.create(
                 {
                     "ref": "{} C/O {} - Line {}".format(
                         line.invoice_number, line.distinta_id.name, line.sequence
                     ),
                     "journal_id": journal.id,
-                    "date": line.distinta_id.registration_date,
+                    "date": date_accepted,
                 }
             )
             to_be_reconciled = self.env["account.move.line"]
@@ -427,6 +457,7 @@ class RibaListLine(models.Model):
                         "credit": riba_move_line.amount,
                         "debit": 0.0,
                         "move_id": move.id,
+                        "date": date_accepted,
                     }
                 )
                 to_be_reconciled |= move_line
@@ -452,6 +483,7 @@ class RibaListLine(models.Model):
                     "credit": 0.0,
                     "debit": total_credit,
                     "move_id": move.id,
+                    "date": date_accepted,
                 }
             )
             move.action_post()
@@ -463,10 +495,40 @@ class RibaListLine(models.Model):
                 }
             )
             line.distinta_id.state = "accepted"
-            if not line.distinta_id.date_accepted:
-                line.distinta_id.date_accepted = fields.Date.context_today(self)
 
-    def riba_line_settlement(self):
+    def button_settle(self):
+        # The domain after "!" must match the domain
+        # that shows the 'Pay' button in each RiBa line
+        to_settle_lines = self.filtered_domain(
+            [
+                "!",
+                "|",
+                ("type", "=", "incasso"),
+                ("state", "!=", "accredited"),
+            ]
+        )
+        if not to_settle_lines:
+            raise UserError(_("No line can be settled"))
+
+        payment_wizard_action = (
+            self.env["riba.payment.multiple"]
+            .with_context(
+                active_ids=to_settle_lines.distinta_id.ids,
+                default_riba_line_ids=to_settle_lines.ids,
+            )
+            .get_formview_action()
+        )
+        payment_wizard_action.update(
+            name=_("Settle line"),
+            target="new",
+        )
+        return payment_wizard_action
+
+    def riba_line_settlement(self, date=None):
+        """Create payment the acceptance move of each line in `self`.
+
+        :param date: The created payment's date.
+        """
         for riba_line in self:
             if not riba_line.distinta_id.config_id.settlement_journal_id:
                 raise UserError(_("Please define a Settlement Journal."))
@@ -489,12 +551,13 @@ class RibaListLine(models.Model):
                 riba_line.distinta_id.name,
                 riba_line.partner_id.name,
             )
+            move_date = date or riba_line.due_date.strftime("%Y-%m-%d")
             settlement_move = move_model.create(
                 {
                     "journal_id": (
                         riba_line.distinta_id.config_id.settlement_journal_id.id
                     ),
-                    "date": date.today().strftime("%Y-%m-%d"),
+                    "date": move_date,
                     "ref": move_ref,
                 }
             )

@@ -1,4 +1,7 @@
+import os
+
 from odoo.tests import common
+from odoo.tools import config
 
 
 class TestRibaCommon(common.TransactionCase):
@@ -67,8 +70,12 @@ class TestRibaCommon(common.TransactionCase):
             ],
             limit=1,
         )
+        self.account_payment_term_riba = self.env.ref(
+            "l10n_it_ricevute_bancarie.account_payment_term_riba"
+        )
         self.invoice = self._create_invoice()
         self.invoice2 = self._create_invoice()
+        self.invoice_sbf = self._create_sbf_invoice()
         self.sbf_effects = self.env["account.account"].create(
             {
                 "code": "STC",
@@ -100,10 +107,9 @@ class TestRibaCommon(common.TransactionCase):
                 "company_id": self.company2.id,
             }
         )
-        self.riba_config = self.create_config()
-        self.account_payment_term_riba = self.env.ref(
-            "l10n_it_ricevute_bancarie.account_payment_term_riba"
-        )
+        self.riba_config_sbf_maturation = self.create_config("maturation")
+        self.riba_config_sbf_immediate = self.create_config("immediate")
+        self.riba_config_incasso = self.create_config_incasso()
         self.company_bank.codice_sia = "AA555"
 
     def _create_service_due_cost(self):
@@ -151,6 +157,37 @@ class TestRibaCommon(common.TransactionCase):
                             "quantity": 1.0,
                             "price_unit": 100.00,
                             "account_id": self.sale_account.id,
+                        },
+                    )
+                ],
+            }
+        )
+
+    def _create_sbf_invoice(self):
+        self.partner.property_account_receivable_id = self.account_rec1_id.id
+        recent_date = (
+            self.env["account.move"]
+            .search([("invoice_date", "!=", False)], order="invoice_date desc", limit=1)
+            .invoice_date
+        )
+        return self.env["account.move"].create(
+            {
+                "invoice_date": recent_date,
+                "move_type": "out_invoice",
+                "journal_id": self.sale_journal.id,
+                "partner_id": self.partner.id,
+                "invoice_payment_term_id": self.account_payment_term_riba.id,
+                "invoice_line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "name": "product1",
+                            "product_id": self.product1.id,
+                            "quantity": 1.0,
+                            "price_unit": 450.00,
+                            "account_id": self.sale_account.id,
+                            "tax_ids": [[6, 0, []]],
                         },
                     )
                 ],
@@ -207,11 +244,23 @@ class TestRibaCommon(common.TransactionCase):
             }
         )
 
-    def create_config(self):
+    def create_config_incasso(self):
+        return self.env["riba.configuration"].create(
+            {
+                "name": "After Collection",
+                "type": "incasso",
+                "bank_id": self.company_bank.id,
+                "acceptance_journal_id": self.bank_journal.id,
+                "acceptance_account_id": self.sbf_effects.id,
+            }
+        )
+
+    def create_config(self, sbf_collection_type):
         return self.env["riba.configuration"].create(
             {
                 "name": "Subject To Collection",
                 "type": "sbf",
+                "sbf_collection_type": sbf_collection_type,
                 "bank_id": self.company_bank.id,
                 "acceptance_journal_id": self.bank_journal.id,
                 "accreditation_journal_id": self.bank_journal.id,
@@ -222,5 +271,82 @@ class TestRibaCommon(common.TransactionCase):
                 "unsolved_journal_id": self.bank_journal.id,
                 "overdue_effects_account_id": self.unsolved_account.id,
                 "protest_charge_account_id": self.expenses_account.id,
+                "settlement_journal_id": self.bank_journal.id,
             }
         )
+
+    def riba_sbf_common(self, configuration_id):
+        invoice = self._create_sbf_invoice()
+        invoice._onchange_riba_partner_bank_id()
+        invoice.action_post()
+        riba_move_line_id = False
+        for move_line in invoice.line_ids:
+            if move_line.account_id.id == self.account_rec1_id.id:
+                riba_move_line_id = move_line.id
+                line_ids = self.move_line_model.search(
+                    [
+                        "&",
+                        "|",
+                        ("riba", "=", "True"),
+                        ("unsolved_invoice_ids", "!=", False),
+                        ("account_id.internal_type", "=", "receivable"),
+                        ("reconciled", "=", False),
+                        ("distinta_line_ids", "=", False),
+                        ("move_id", "=", invoice.id),
+                    ]
+                )
+                self.assertEqual(len(line_ids), 1)
+                self.assertEqual(line_ids[0].id, move_line.id)
+        self.assertTrue(riba_move_line_id)
+
+        # issue wizard
+        wizard_riba_issue = self.env["riba.issue"].create(
+            {"configuration_id": configuration_id}
+        )
+        action = wizard_riba_issue.with_context(
+            {"active_ids": [riba_move_line_id]}
+        ).create_list()
+        riba_list_id = action and action["res_id"] or False
+        riba_list = self.distinta_model.browse(riba_list_id)
+        riba_list.confirm()
+        self.assertEqual(riba_list.state, "accepted")
+        self.assertEqual(invoice.state, "posted")
+
+        # Se la compute non viene invocata il test fallisce
+        riba_list._compute_acceptance_move_ids()
+        self.assertEqual(len(riba_list.acceptance_move_ids), 1)
+        self.assertEqual(len(riba_list.payment_ids), 0)
+
+        # I print the C/O distinta report
+        docargs = {
+            "doc_ids": riba_list.ids,
+            "doc_model": "riba.distinta",
+            "docs": self.env["riba.distinta"].browse(riba_list.ids),
+        }
+        data = self.env.ref("l10n_it_ricevute_bancarie.distinta_qweb")._render(docargs)
+        if config.get("test_report_directory"):
+            open(
+                os.path.join(config["test_report_directory"], "riba-list." + format),
+                "wb+",
+            ).write(data)
+
+        # credit wizard
+        wiz_accreditation = (
+            self.env["riba.accreditation"]
+            .with_context(
+                {
+                    "active_model": "riba.distinta",
+                    "active_ids": [riba_list_id],
+                    "active_id": riba_list_id,
+                }
+            )
+            .create(
+                {
+                    "bank_amount": 445,
+                    "expense_amount": 5,
+                }
+            )
+        )
+        wiz_accreditation.create_move()
+        self.assertEqual(riba_list.state, "accredited")
+        return invoice, riba_list

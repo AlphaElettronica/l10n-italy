@@ -1,4 +1,5 @@
 #  Copyright 2023 Simone Rubino - TAKOBI
+#  Copyright 2025 Simone Rubino - PyTech
 #  License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 from odoo import api, models
@@ -38,3 +39,16 @@ class AccountPaymentRegister(models.TransientModel):
                         "source_amount_currency"
                     ] = net_pay_residual_amount
         return wizard_values_from_batch
+
+    def _create_payment_vals_from_wizard(self):
+        payment_vals = super()._create_payment_vals_from_wizard()
+        write_off_vals = payment_vals.get("write_off_line_vals")
+        if write_off_vals:
+            withholding_moves = self.line_ids.move_id.filtered("withholding_tax")
+            if withholding_moves:
+                residual_withholding_amount = sum(
+                    withholding_moves.mapped("amount_residual") or []
+                ) - sum(withholding_moves.mapped("amount_net_pay_residual") or [])
+                if residual_withholding_amount:
+                    write_off_vals["amount"] -= residual_withholding_amount
+        return payment_vals

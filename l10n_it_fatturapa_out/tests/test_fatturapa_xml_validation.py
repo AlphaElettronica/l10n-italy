@@ -1,6 +1,6 @@
 # Copyright 2014 Davide Corio
 # Copyright 2015-2016 Lorenzo Battistini - Agile Business Group
-# Copyright 2018-2019 Alex Comba - Agile Business Group
+# Copyright 2018-2024 Alex Comba - Agile Business Group
 # Copyright 2024 Simone Rubino - Aion Tech
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
@@ -8,6 +8,7 @@ import base64
 import re
 from unittest.mock import Mock
 
+from lxml import etree
 from psycopg2 import IntegrityError
 
 import odoo
@@ -859,6 +860,280 @@ class TestFatturaPAXMLValidation(FatturaPACommon):
         xml_content = base64.decodebytes(attachment.datas)
         self.check_content(xml_content, "IT06363391001_00017.xml")
 
+    def test_18_xml_export(self):
+        vals = {
+            "name": "Azienda Sanmarinese",
+            "is_company": "1",
+            "street": "Piazza della Libertà",
+            "is_pa": False,
+            "city": "Città di San Marino",
+            "zip": "47890",
+            "country_id": self.env.ref("base.sm").id,
+            "email": "asm@example.com",
+            "vat": "SM00123",
+            "codice_destinatario": "2R4GTO8",
+        }
+        partner_sm = self.env["res.partner"].create(vals)
+
+        tax_kind = self.env["account.tax.kind"].search([("code", "=", "N3.3")], limit=1)
+        self.assertTrue(tax_kind)
+
+        vals = {
+            "name": "0% SM",
+            "amount": 0.0,
+            "amount_type": "percent",
+            "description": "Non Imponibile Art. 71",
+            "kind_id": tax_kind.id,
+        }
+        tax_id = self.env["account.tax"].create(vals)
+
+        self.env.company.fatturapa_pub_administration_ref = "F000000111"
+        invoice = self.invoice_model.create(
+            {
+                "name": "INV/2016/0013",
+                "company_id": self.env.company.id,
+                "invoice_date": "2016-01-07",
+                "partner_id": partner_sm.id,
+                "journal_id": self.sales_journal.id,
+                # "account_id": self.a_recv.id,
+                "invoice_payment_term_id": self.account_payment_term.id,
+                "user_id": self.user_demo.id,
+                "move_type": "out_invoice",
+                "currency_id": self.EUR.id,
+                "invoice_line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "account_id": self.a_sale.id,
+                            "product_id": self.product_product_10.id,
+                            "name": "Mouse\nOptical",
+                            "quantity": 1,
+                            "product_uom_id": self.product_uom_unit.id,
+                            "price_unit": 10,
+                            "tax_ids": [(6, 0, [tax_id.id])],
+                        },
+                    ),
+                    (
+                        0,
+                        0,
+                        {
+                            "account_id": self.a_sale.id,
+                            "product_id": self.product_order_01.id,
+                            "name": "Zed+ Antivirus",
+                            "quantity": 1,
+                            "product_uom_id": self.product_uom_unit.id,
+                            "price_unit": 4,
+                            "tax_ids": [(6, 0, [tax_id.id])],
+                        },
+                    ),
+                ],
+            }
+        )
+        invoice._post()
+        self.assertFalse(self.attach_model.file_name_exists("00001"))
+        res = self.run_wizard(invoice.id)
+
+        self.assertTrue(res)
+        attachment = self.attach_model.browse(res["res_id"])
+        file_name_match = "^%s_[A-Za-z0-9]{5}.xml$" % self.env.company.vat
+        # Checking file name randomly generated
+        self.assertTrue(re.search(file_name_match, attachment.name))
+        self.set_e_invoice_file_id(attachment, "IT06363391001_00018.xml")
+        self.assertTrue(self.attach_model.file_name_exists("00018"))
+
+        # XML doc to be validated
+        xml_content = base64.decodebytes(attachment.datas)
+        self.check_content(xml_content, "IT06363391001_00018.xml")
+
+    def _get_multiple_invoices(self, partner, invoices_number=2):
+        """Create `invoices_number` invoices for `partner`."""
+        invoices = self.invoice_model.browse()
+        for _ in range(invoices_number):
+            invoices |= self.init_invoice(
+                "out_invoice",
+                partner=partner,
+                amounts=[
+                    100,
+                ],
+            )
+        invoices.action_post()
+        return invoices
+
+    def test_max_invoice_number_unlimited(self):
+        """Check that when both partner and company do not have any max value,
+        only one attachment is created."""
+
+        # pre-condition: partner and company do not have any max value
+        company = self.company
+        self.assertEqual(company.max_invoice_in_xml, 0)
+        partner = self.res_partner_fatturapa_0
+        self.assertEqual(partner.max_invoice_in_xml, 0)
+
+        # Create two invoices
+        invoices = self._get_multiple_invoices(partner)
+        self.run_wizard(invoices.ids)
+
+        # Check that only one attachment is created
+        attachments_nbr = len(invoices.mapped("fatturapa_attachment_out_id"))
+        self.assertEqual(attachments_nbr, 1)
+
+    def test_max_invoice_number_partner(self):
+        """Check that when partner has a max value, company value is ignored and
+        many attachments are created."""
+
+        # pre-condition: partner has a value
+        company = self.company
+        self.assertEqual(company.max_invoice_in_xml, 0)
+        partner = self.res_partner_fatturapa_0
+        partner.max_invoice_in_xml = 1
+
+        # Create two invoices
+        invoices = self._get_multiple_invoices(partner)
+        self.run_wizard(invoices.ids)
+
+        # Check that two attachments are created
+        attachments_nbr = len(invoices.mapped("fatturapa_attachment_out_id"))
+        self.assertEqual(attachments_nbr, 2)
+
+    def test_max_invoice_number_company(self):
+        """Check that when company has a max value and partner does not,
+        many attachments are created."""
+
+        # pre-condition: only company has a value
+        company = self.company
+        company.max_invoice_in_xml = 1
+        partner = self.res_partner_fatturapa_0
+        self.assertEqual(partner.max_invoice_in_xml, 0)
+
+        # Create two invoices
+        invoices = self._get_multiple_invoices(partner)
+        self.run_wizard(invoices.ids)
+
+        # Check that two attachments are created
+        attachments_nbr = len(invoices.mapped("fatturapa_attachment_out_id"))
+        self.assertEqual(attachments_nbr, 2)
+
+    def test_20_xml_export(self):
+        self.set_sequences(20, "2024-02-01")
+        # Change phone number with IT prefix
+        self.env.company.partner_id.phone = "+390951234567"
+        invoice = self.invoice_model.create(
+            {
+                "name": "INV/2024/0020",
+                "invoice_date": "2024-02-01",
+                "partner_id": self.res_partner_fatturapa_0.id,
+                "journal_id": self.sales_journal.id,
+                # "account_id": self.a_recv.id,
+                "invoice_payment_term_id": self.account_payment_term.id,
+                "user_id": self.user_demo.id,
+                "move_type": "out_invoice",
+                "currency_id": self.EUR.id,
+                "invoice_line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "account_id": self.a_sale.id,
+                            "product_id": self.product_product_10.id,
+                            "name": "Mouse, Optical",
+                            "quantity": 1,
+                            "product_uom_id": self.product_uom_unit.id,
+                            "price_unit": 10,
+                            "discount": 10,
+                            "tax_ids": [(6, 0, {self.tax_22.id})],
+                        },
+                    ),
+                ],
+            }
+        )
+        invoice._post()
+        res = self.run_wizard(invoice.id)
+        attachment = self.attach_model.browse(res["res_id"])
+        self.set_e_invoice_file_id(attachment, "IT03297040366_00020.xml")
+        xml_content = base64.decodebytes(attachment.datas)
+        self.check_content(xml_content, "IT03297040366_00020.xml")
+
+    def test_21_xml_export(self):
+        self.set_sequences(21, "2024-02-01")
+        # NOT IT Number (Odoo Number)
+        self.env.company.partner_id.phone = "+3222903490"
+        invoice = self.invoice_model.create(
+            {
+                "name": "INV/2024/0021",
+                "invoice_date": "2024-02-01",
+                "partner_id": self.res_partner_fatturapa_0.id,
+                "journal_id": self.sales_journal.id,
+                # "account_id": self.a_recv.id,
+                "invoice_payment_term_id": self.account_payment_term.id,
+                "user_id": self.user_demo.id,
+                "move_type": "out_invoice",
+                "currency_id": self.EUR.id,
+                "invoice_line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "account_id": self.a_sale.id,
+                            "product_id": self.product_product_10.id,
+                            "name": "Mouse, Optical",
+                            "quantity": 1,
+                            "product_uom_id": self.product_uom_unit.id,
+                            "price_unit": 10,
+                            "discount": 10,
+                            "tax_ids": [(6, 0, {self.tax_22.id})],
+                        },
+                    ),
+                ],
+            }
+        )
+        invoice._post()
+        res = self.run_wizard(invoice.id)
+        attachment = self.attach_model.browse(res["res_id"])
+        self.set_e_invoice_file_id(attachment, "IT03297040366_00021.xml")
+        xml_content = base64.decodebytes(attachment.datas)
+        self.check_content(xml_content, "IT03297040366_00021.xml")
+
+    def test_22_xml_export(self):
+        self.set_sequences(22, "2024-02-01")
+        # NOT IT Number (Very Long number)
+        self.env.company.partner_id.phone = "+322290349022903490"
+        invoice = self.invoice_model.create(
+            {
+                "name": "INV/2024/0021",
+                "invoice_date": "2024-02-01",
+                "partner_id": self.res_partner_fatturapa_0.id,
+                "journal_id": self.sales_journal.id,
+                # "account_id": self.a_recv.id,
+                "invoice_payment_term_id": self.account_payment_term.id,
+                "user_id": self.user_demo.id,
+                "move_type": "out_invoice",
+                "currency_id": self.EUR.id,
+                "invoice_line_ids": [
+                    (
+                        0,
+                        0,
+                        {
+                            "account_id": self.a_sale.id,
+                            "product_id": self.product_product_10.id,
+                            "name": "Mouse, Optical",
+                            "quantity": 1,
+                            "product_uom_id": self.product_uom_unit.id,
+                            "price_unit": 10,
+                            "discount": 10,
+                            "tax_ids": [(6, 0, {self.tax_22.id})],
+                        },
+                    ),
+                ],
+            }
+        )
+        invoice._post()
+        res = self.run_wizard(invoice.id)
+        attachment = self.attach_model.browse(res["res_id"])
+        self.set_e_invoice_file_id(attachment, "IT03297040366_00022.xml")
+        xml_content = base64.decodebytes(attachment.datas)
+        self.check_content(xml_content, "IT03297040366_00022.xml")
+
     def test_no_tax_fail(self):
         """
         - create an invoice with a product line without taxes
@@ -937,6 +1212,39 @@ class TestFatturaPAXMLValidation(FatturaPACommon):
         finally:
             # Remove from the stack to not interfere with other tests
             odoo.http._request_stack.pop()
+
+    def test_invalid_char_fail(self):
+        """
+        - create an invoice with a product line with invalid char
+          as the https://en.wikipedia.org/wiki/List_of_Unicode_characters#Control_codes
+
+        expect to fail with a proper message
+        """
+        invoice = self._create_invoice()
+        # Set invoice line label to https://www.ascii-code.com/character/%E2%90%82
+        CHAR_CODE = 2
+        invoice.invoice_line_ids.name = chr(CHAR_CODE)
+        try:
+            invoice._post()
+        except etree.XMLSyntaxError as e:
+            entry = e.error_log.last_error
+            if entry.type_name == "ERR_INVALID_CHAR":
+                # just passing in order to not break the test execution
+                # due to the exception raised by account_edi_xml_cii_facturx.py/_export_invoice
+                # (https://github.com/odoo/odoo/blob/14.0/addons/account_edi_ubl_cii/
+                #  models/account_edi_xml_cii_facturx.py#L242)
+                pass
+        wizard = self.wizard_model.create({})
+        with self.assertRaises(UserError) as ue:
+            wizard.with_context({"active_ids": [invoice.id]}).exportFatturaPA()
+        error_msg = ue.exception.args[0]
+        error_fragments = (
+            f"Error processing invoice(s) {invoice.name}",
+            f"PCDATA invalid Char value {CHAR_CODE}",
+            "Line affected",
+        )
+        for fragment in error_fragments:
+            self.assertIn(fragment, error_msg)
 
     def test_multicompany_fail(self):
         """
@@ -1113,89 +1421,3 @@ class TestFatturaPAXMLValidation(FatturaPACommon):
         invoice.action_post()
 
         self.assertEqual(invoice.state, "posted")
-
-    def test_18_xml_export(self):
-        vals = {
-            "name": "Azienda Sanmarinese",
-            "is_company": "1",
-            "street": "Piazza della Libertà",
-            "is_pa": False,
-            "city": "Città di San Marino",
-            "zip": "47890",
-            "country_id": self.env.ref("base.sm").id,
-            "email": "asm@example.com",
-            "vat": "SM00123",
-            "codice_destinatario": "2R4GTO8",
-        }
-        partner_sm = self.env["res.partner"].create(vals)
-
-        tax_kind = self.env["account.tax.kind"].search([("code", "=", "N3.3")], limit=1)
-        self.assertTrue(tax_kind)
-
-        vals = {
-            "name": "0% SM",
-            "amount": 0.0,
-            "amount_type": "percent",
-            "description": "Non Imponibile Art. 71",
-            "kind_id": tax_kind.id,
-        }
-        tax_id = self.env["account.tax"].create(vals)
-
-        self.env.company.fatturapa_pub_administration_ref = "F000000111"
-        invoice = self.invoice_model.create(
-            {
-                "name": "INV/2016/0013",
-                "company_id": self.env.company.id,
-                "invoice_date": "2016-01-07",
-                "partner_id": partner_sm.id,
-                "journal_id": self.sales_journal.id,
-                # "account_id": self.a_recv.id,
-                "invoice_payment_term_id": self.account_payment_term.id,
-                "user_id": self.user_demo.id,
-                "move_type": "out_invoice",
-                "currency_id": self.EUR.id,
-                "invoice_line_ids": [
-                    (
-                        0,
-                        0,
-                        {
-                            "account_id": self.a_sale.id,
-                            "product_id": self.product_product_10.id,
-                            "name": "Mouse\nOptical",
-                            "quantity": 1,
-                            "product_uom_id": self.product_uom_unit.id,
-                            "price_unit": 10,
-                            "tax_ids": [(6, 0, [tax_id.id])],
-                        },
-                    ),
-                    (
-                        0,
-                        0,
-                        {
-                            "account_id": self.a_sale.id,
-                            "product_id": self.product_order_01.id,
-                            "name": "Zed+ Antivirus",
-                            "quantity": 1,
-                            "product_uom_id": self.product_uom_unit.id,
-                            "price_unit": 4,
-                            "tax_ids": [(6, 0, [tax_id.id])],
-                        },
-                    ),
-                ],
-            }
-        )
-        invoice._post()
-        self.assertFalse(self.attach_model.file_name_exists("00001"))
-        res = self.run_wizard(invoice.id)
-
-        self.assertTrue(res)
-        attachment = self.attach_model.browse(res["res_id"])
-        file_name_match = "^%s_[A-Za-z0-9]{5}.xml$" % self.env.company.vat
-        # Checking file name randomly generated
-        self.assertTrue(re.search(file_name_match, attachment.name))
-        self.set_e_invoice_file_id(attachment, "IT06363391001_00018.xml")
-        self.assertTrue(self.attach_model.file_name_exists("00018"))
-
-        # XML doc to be validated
-        xml_content = base64.decodebytes(attachment.datas)
-        self.check_content(xml_content, "IT06363391001_00018.xml")

@@ -1,6 +1,7 @@
 # Copyright 2014 Davide Corio <davide.corio@abstract.it>
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import ValidationError
 
 RELATED_DOCUMENT_TYPES = {
     "order": "DatiOrdineAcquisto",
@@ -216,6 +217,7 @@ class FatturaAttachments(models.Model):
     _name = "fatturapa.attachments"
     _description = "E-invoice attachments"
     _inherits = {"ir.attachment": "ir_attachment_id"}
+    _inherit = ["l10n_it_fatturapa.attachment.e_invoice.link"]
 
     ir_attachment_id = fields.Many2one(
         "ir.attachment", "Attachment", required=True, ondelete="cascade"
@@ -458,3 +460,25 @@ class AccountInvoice(models.Model):
             "res_id": self.id,
             "target": "current",
         }
+
+    @api.constrains("move_type", "invoice_payment_term_id", "partner_bank_id")
+    def _check_riba_partner_bank(self):
+        """
+        Ensure that for customer invoices with RiBa (MP12) payment mode,
+        no recipient bank is set. This avoids misleading the customer,
+        as the recipient bank for RiBa is decided at a later stage.
+        """
+        for move in self:
+            if move.move_type == "out_invoice" and move.invoice_payment_term_id:
+                # MP12 refers to RIBA payment mode
+                if (
+                    move.invoice_payment_term_id.fatturapa_pm_id.code == "MP12"
+                    and move.partner_bank_id
+                ):
+                    raise ValidationError(
+                        _(
+                            "It is not possible to set a partner "
+                            "bank with RIBA payment mode for customer invoices."
+                            " Please remove the partner bank or change the payment mode."
+                        )
+                    )

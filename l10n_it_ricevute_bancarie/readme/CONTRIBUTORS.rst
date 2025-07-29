@@ -12,3 +12,12 @@
 
 * `Ooops <https://www.ooops404.com>`_:
   * Giovanni Serra <giovanni@gslab.it>
+  * Eduard Brahas <eduard@ooops404.com>
+
+- `TAKOBI <https://takobi.online>`_:
+  - Simone Rubino <sir@takobi.online>
+
+* Nextev Srl <odoo@nextev.it>
+* `PyTech <https://www.pytech.it>`_:
+
+  * Simone Rubino <simone.rubino@pytech.it>

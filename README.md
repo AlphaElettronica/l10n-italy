@@ -21,74 +21,81 @@ Available addons
 ----------------
 addon | version | maintainers | summary
 --- | --- | --- | ---
-[account_vat_period_end_statement](account_vat_period_end_statement/) | 14.0.1.2.0 |  | Allow to create the 'VAT Statement'.
-[assets_management](assets_management/) | 14.0.1.5.1 |  | Gestione Cespiti
-[currency_rate_update_boi](currency_rate_update_boi/) | 14.0.1.0.0 | [![eLBati](https://github.com/eLBati.png?size=30px)](https://github.com/eLBati) | Update exchange rates using www.bancaditalia.it
-[fiscal_epos_print](fiscal_epos_print/) | 14.0.1.0.1 | [![eLBati](https://github.com/eLBati.png?size=30px)](https://github.com/eLBati) | ePOS-Print XML Fiscal Printer Driver - Stampanti Epson compatibili: FP81II, FP90III
-[l10n_it_abicab](l10n_it_abicab/) | 14.0.1.0.2 | [![Borruso](https://github.com/Borruso.png?size=30px)](https://github.com/Borruso) | Base Bank ABI/CAB codes
-[l10n_it_account](l10n_it_account/) | 14.0.1.4.1 |  | Modulo base usato come dipendenza di altri moduli contabili
-[l10n_it_account_balance_eu](l10n_it_account_balance_eu/) | 14.0.1.0.1 | [![mktsrl](https://github.com/mktsrl.png?size=30px)](https://github.com/mktsrl) | ITA - Bilancio UE con XBRL
-[l10n_it_account_stamp](l10n_it_account_stamp/) | 14.0.1.1.4 |  | Gestione automatica dell'imposta di bollo
+[account_vat_period_end_statement](account_vat_period_end_statement/) | 14.0.1.2.3 |  | Allow to create the 'VAT Statement'.
+[assets_management](assets_management/) | 14.0.1.6.1 |  | Gestione Cespiti
+[currency_rate_update_boi](currency_rate_update_boi/) | 14.0.1.0.0 | <a href='https://github.com/eLBati'><img src='https://github.com/eLBati.png' width='32' height='32' style='border-radius:50%;' alt='eLBati'/></a> | Update exchange rates using www.bancaditalia.it
+[fiscal_epos_print](fiscal_epos_print/) | 14.0.1.0.1 | <a href='https://github.com/eLBati'><img src='https://github.com/eLBati.png' width='32' height='32' style='border-radius:50%;' alt='eLBati'/></a> | ePOS-Print XML Fiscal Printer Driver - Stampanti Epson compatibili: FP81II, FP90III
+[l10n_it_abicab](l10n_it_abicab/) | 14.0.1.0.2 | <a href='https://github.com/Borruso'><img src='https://github.com/Borruso.png' width='32' height='32' style='border-radius:50%;' alt='Borruso'/></a> | Base Bank ABI/CAB codes
+[l10n_it_account](l10n_it_account/) | 14.0.1.4.5 |  | Modulo base usato come dipendenza di altri moduli contabili
+[l10n_it_account_balance_eu](l10n_it_account_balance_eu/) | 14.0.1.0.1 | <a href='https://github.com/mktsrl'><img src='https://github.com/mktsrl.png' width='32' height='32' style='border-radius:50%;' alt='mktsrl'/></a> | ITA - Bilancio UE con XBRL
+[l10n_it_account_stamp](l10n_it_account_stamp/) | 14.0.1.2.0 |  | Gestione automatica dell'imposta di bollo
 [l10n_it_account_tax_kind](l10n_it_account_tax_kind/) | 14.0.1.1.1 |  | Gestione natura delle aliquote IVA
 [l10n_it_amount_to_text](l10n_it_amount_to_text/) | 14.0.1.0.0 |  | Localizza le valute in italiano per amount_to_text
 [l10n_it_appointment_code](l10n_it_appointment_code/) | 14.0.1.0.1 |  | Aggiunge la tabella dei codici carica da usare nelle dichiarazioni fiscali italiane
 [l10n_it_asset_history_import](l10n_it_asset_history_import/) | 14.0.1.0.0 |  | Cespiti: importazione storico dati
-[l10n_it_asset_history_import_queue](l10n_it_asset_history_import_queue/) | 14.0.1.0.0 | [![GSLabit](https://github.com/GSLabit.png?size=30px)](https://github.com/GSLabit) | Cespiti: importazione storico dati in background
+[l10n_it_asset_history_import_queue](l10n_it_asset_history_import_queue/) | 14.0.1.0.0 | <a href='https://github.com/GSLabit'><img src='https://github.com/GSLabit.png' width='32' height='32' style='border-radius:50%;' alt='GSLabit'/></a> | Cespiti: importazione storico dati in background
 [l10n_it_ateco](l10n_it_ateco/) | 14.0.1.1.0 |  | ITA - Codici Ateco
 [l10n_it_bill_of_entry](l10n_it_bill_of_entry/) | 14.0.1.0.2 |  | ITA - Bolle doganali
 [l10n_it_central_journal](l10n_it_central_journal/) | 14.0.1.0.1 |  | ITA - Libro giornale
-[l10n_it_central_journal_reportlab](l10n_it_central_journal_reportlab/) | 14.0.1.1.0 | [![MarcoCalcagni](https://github.com/MarcoCalcagni.png?size=30px)](https://github.com/MarcoCalcagni) [![Borruso](https://github.com/Borruso.png?size=30px)](https://github.com/Borruso) | ITA - Libro giornale - Reportlab
-[l10n_it_declaration_of_intent](l10n_it_declaration_of_intent/) | 14.0.1.1.16 |  | Gestione dichiarazioni di intento
-[l10n_it_delivery_note](l10n_it_delivery_note/) | 14.0.3.5.1 | [![MarcoCalcagni](https://github.com/MarcoCalcagni.png?size=30px)](https://github.com/MarcoCalcagni) [![aleuffre](https://github.com/aleuffre.png?size=30px)](https://github.com/aleuffre) [![renda-dev](https://github.com/renda-dev.png?size=30px)](https://github.com/renda-dev) | Crea, gestisce e fattura i DDT partendo dalle consegne
-[l10n_it_delivery_note_base](l10n_it_delivery_note_base/) | 14.0.1.0.2 | [![MarcoCalcagni](https://github.com/MarcoCalcagni.png?size=30px)](https://github.com/MarcoCalcagni) | Crea e gestisce tabelle principali per gestire i DDT
-[l10n_it_delivery_note_batch](l10n_it_delivery_note_batch/) | 14.0.1.1.0 | [![MarcoCalcagni](https://github.com/MarcoCalcagni.png?size=30px)](https://github.com/MarcoCalcagni) [![TheMule71](https://github.com/TheMule71.png?size=30px)](https://github.com/TheMule71) [![aleuffre](https://github.com/aleuffre.png?size=30px)](https://github.com/aleuffre) [![PicchiSeba](https://github.com/PicchiSeba.png?size=30px)](https://github.com/PicchiSeba) [![renda-dev](https://github.com/renda-dev.png?size=30px)](https://github.com/renda-dev) | Crea i DDT partendo da gruppi di prelievi
-[l10n_it_delivery_note_customer_code](l10n_it_delivery_note_customer_code/) | 14.0.1.2.0 | [![aleuffre](https://github.com/aleuffre.png?size=30px)](https://github.com/aleuffre) [![renda-dev](https://github.com/renda-dev.png?size=30px)](https://github.com/renda-dev) [![PicchiSeba](https://github.com/PicchiSeba.png?size=30px)](https://github.com/PicchiSeba) | Product Customer code and name for delivery note
-[l10n_it_delivery_note_inter_company](l10n_it_delivery_note_inter_company/) | 14.0.1.0.3 | [![aleuffre](https://github.com/aleuffre.png?size=30px)](https://github.com/aleuffre) [![renda-dev](https://github.com/renda-dev.png?size=30px)](https://github.com/renda-dev) | Delivery Note Inter Company
-[l10n_it_delivery_note_inter_warehouse](l10n_it_delivery_note_inter_warehouse/) | 14.0.1.0.1 | [![aleuffre](https://github.com/aleuffre.png?size=30px)](https://github.com/aleuffre) [![renda-dev](https://github.com/renda-dev.png?size=30px)](https://github.com/renda-dev) | Delivery Note Inter Warehouse
-[l10n_it_delivery_note_order_link](l10n_it_delivery_note_order_link/) | 14.0.1.1.0 | [![andreampiovesana](https://github.com/andreampiovesana.png?size=30px)](https://github.com/andreampiovesana) [![aleuffre](https://github.com/aleuffre.png?size=30px)](https://github.com/aleuffre) [![renda-dev](https://github.com/renda-dev.png?size=30px)](https://github.com/renda-dev) [![PicchiSeba](https://github.com/PicchiSeba.png?size=30px)](https://github.com/PicchiSeba) | Crea collegamento tra i DDT e ordine di vendita/acquisto
-[l10n_it_delivery_note_rma](l10n_it_delivery_note_rma/) | 14.0.1.1.0 | [![solo4games](https://github.com/solo4games.png?size=30px)](https://github.com/solo4games) [![CetmixGitDrone](https://github.com/CetmixGitDrone.png?size=30px)](https://github.com/CetmixGitDrone) | Add Oportunity to create RMA from DN with wizard and smart button to DN view
-[l10n_it_fatturapa](l10n_it_fatturapa/) | 14.0.2.3.2 |  | Fatture elettroniche
-[l10n_it_fatturapa_export_zip](l10n_it_fatturapa_export_zip/) | 14.0.1.0.1 | [![sergiocorato](https://github.com/sergiocorato.png?size=30px)](https://github.com/sergiocorato) | Permette di esportare in uno ZIP diversi file XML di fatture elettroniche
-[l10n_it_fatturapa_import_zip](l10n_it_fatturapa_import_zip/) | 14.0.1.1.0 |  | Permette di importare in uno ZIP diversi file XML di fatture elettroniche
-[l10n_it_fatturapa_in](l10n_it_fatturapa_in/) | 14.0.2.3.3 |  | Ricezione fatture elettroniche
+[l10n_it_central_journal_reportlab](l10n_it_central_journal_reportlab/) | 14.0.1.2.0 | <a href='https://github.com/MarcoCalcagni'><img src='https://github.com/MarcoCalcagni.png' width='32' height='32' style='border-radius:50%;' alt='MarcoCalcagni'/></a> <a href='https://github.com/Borruso'><img src='https://github.com/Borruso.png' width='32' height='32' style='border-radius:50%;' alt='Borruso'/></a> | ITA - Libro giornale - Reportlab
+[l10n_it_declaration_of_intent](l10n_it_declaration_of_intent/) | 14.0.1.4.1 |  | Gestione dichiarazioni di intento
+[l10n_it_delivery_note](l10n_it_delivery_note/) | 14.0.3.6.7 | <a href='https://github.com/MarcoCalcagni'><img src='https://github.com/MarcoCalcagni.png' width='32' height='32' style='border-radius:50%;' alt='MarcoCalcagni'/></a> <a href='https://github.com/aleuffre'><img src='https://github.com/aleuffre.png' width='32' height='32' style='border-radius:50%;' alt='aleuffre'/></a> <a href='https://github.com/renda-dev'><img src='https://github.com/renda-dev.png' width='32' height='32' style='border-radius:50%;' alt='renda-dev'/></a> | Crea, gestisce e fattura i DDT partendo dalle consegne
+[l10n_it_delivery_note_base](l10n_it_delivery_note_base/) | 14.0.1.0.2 | <a href='https://github.com/MarcoCalcagni'><img src='https://github.com/MarcoCalcagni.png' width='32' height='32' style='border-radius:50%;' alt='MarcoCalcagni'/></a> | Crea e gestisce tabelle principali per gestire i DDT
+[l10n_it_delivery_note_batch](l10n_it_delivery_note_batch/) | 14.0.1.1.0 | <a href='https://github.com/MarcoCalcagni'><img src='https://github.com/MarcoCalcagni.png' width='32' height='32' style='border-radius:50%;' alt='MarcoCalcagni'/></a> <a href='https://github.com/TheMule71'><img src='https://github.com/TheMule71.png' width='32' height='32' style='border-radius:50%;' alt='TheMule71'/></a> <a href='https://github.com/aleuffre'><img src='https://github.com/aleuffre.png' width='32' height='32' style='border-radius:50%;' alt='aleuffre'/></a> <a href='https://github.com/PicchiSeba'><img src='https://github.com/PicchiSeba.png' width='32' height='32' style='border-radius:50%;' alt='PicchiSeba'/></a> <a href='https://github.com/renda-dev'><img src='https://github.com/renda-dev.png' width='32' height='32' style='border-radius:50%;' alt='renda-dev'/></a> | Crea i DDT partendo da gruppi di prelievi
+[l10n_it_delivery_note_customer_code](l10n_it_delivery_note_customer_code/) | 14.0.1.2.0 | <a href='https://github.com/aleuffre'><img src='https://github.com/aleuffre.png' width='32' height='32' style='border-radius:50%;' alt='aleuffre'/></a> <a href='https://github.com/renda-dev'><img src='https://github.com/renda-dev.png' width='32' height='32' style='border-radius:50%;' alt='renda-dev'/></a> <a href='https://github.com/PicchiSeba'><img src='https://github.com/PicchiSeba.png' width='32' height='32' style='border-radius:50%;' alt='PicchiSeba'/></a> | Product Customer code and name for delivery note
+[l10n_it_delivery_note_inter_company](l10n_it_delivery_note_inter_company/) | 14.0.1.0.3 | <a href='https://github.com/aleuffre'><img src='https://github.com/aleuffre.png' width='32' height='32' style='border-radius:50%;' alt='aleuffre'/></a> <a href='https://github.com/renda-dev'><img src='https://github.com/renda-dev.png' width='32' height='32' style='border-radius:50%;' alt='renda-dev'/></a> | Delivery Note Inter Company
+[l10n_it_delivery_note_inter_warehouse](l10n_it_delivery_note_inter_warehouse/) | 14.0.1.0.1 | <a href='https://github.com/aleuffre'><img src='https://github.com/aleuffre.png' width='32' height='32' style='border-radius:50%;' alt='aleuffre'/></a> <a href='https://github.com/renda-dev'><img src='https://github.com/renda-dev.png' width='32' height='32' style='border-radius:50%;' alt='renda-dev'/></a> | Delivery Note Inter Warehouse
+[l10n_it_delivery_note_order_link](l10n_it_delivery_note_order_link/) | 14.0.1.1.1 | <a href='https://github.com/andreampiovesana'><img src='https://github.com/andreampiovesana.png' width='32' height='32' style='border-radius:50%;' alt='andreampiovesana'/></a> <a href='https://github.com/aleuffre'><img src='https://github.com/aleuffre.png' width='32' height='32' style='border-radius:50%;' alt='aleuffre'/></a> <a href='https://github.com/renda-dev'><img src='https://github.com/renda-dev.png' width='32' height='32' style='border-radius:50%;' alt='renda-dev'/></a> <a href='https://github.com/PicchiSeba'><img src='https://github.com/PicchiSeba.png' width='32' height='32' style='border-radius:50%;' alt='PicchiSeba'/></a> | Crea collegamento tra i DDT e ordine di vendita/acquisto
+[l10n_it_delivery_note_rma](l10n_it_delivery_note_rma/) | 14.0.1.1.0 | <a href='https://github.com/solo4games'><img src='https://github.com/solo4games.png' width='32' height='32' style='border-radius:50%;' alt='solo4games'/></a> <a href='https://github.com/CetmixGitDrone'><img src='https://github.com/CetmixGitDrone.png' width='32' height='32' style='border-radius:50%;' alt='CetmixGitDrone'/></a> | Add Oportunity to create RMA from DN with wizard and smart button to DN view
+[l10n_it_fatturapa](l10n_it_fatturapa/) | 14.0.2.4.0 |  | Fatture elettroniche
+[l10n_it_fatturapa_export_zip](l10n_it_fatturapa_export_zip/) | 14.0.1.0.1 | <a href='https://github.com/sergiocorato'><img src='https://github.com/sergiocorato.png' width='32' height='32' style='border-radius:50%;' alt='sergiocorato'/></a> | Permette di esportare in uno ZIP diversi file XML di fatture elettroniche
+[l10n_it_fatturapa_import_zip](l10n_it_fatturapa_import_zip/) | 14.0.1.1.1 |  | Permette di importare in uno ZIP diversi file XML di fatture elettroniche
+[l10n_it_fatturapa_in](l10n_it_fatturapa_in/) | 14.0.2.4.3 |  | Ricezione fatture elettroniche
 [l10n_it_fatturapa_in_purchase](l10n_it_fatturapa_in_purchase/) | 14.0.1.0.0 |  | Modulo ponte tra ricezione fatture elettroniche e acquisti
-[l10n_it_fatturapa_in_rc](l10n_it_fatturapa_in_rc/) | 14.0.1.1.2 | [![sergiocorato](https://github.com/sergiocorato.png?size=30px)](https://github.com/sergiocorato) | Modulo ponte tra e-fattura in acquisto e inversione contabile
-[l10n_it_fatturapa_out](l10n_it_fatturapa_out/) | 14.0.3.7.2 |  | Emissione fatture elettroniche
+[l10n_it_fatturapa_in_rc](l10n_it_fatturapa_in_rc/) | 14.0.1.1.2 | <a href='https://github.com/sergiocorato'><img src='https://github.com/sergiocorato.png' width='32' height='32' style='border-radius:50%;' alt='sergiocorato'/></a> | Modulo ponte tra e-fattura in acquisto e inversione contabile
+[l10n_it_fatturapa_out](l10n_it_fatturapa_out/) | 14.0.3.9.3 |  | Emissione fatture elettroniche
 [l10n_it_fatturapa_out_di](l10n_it_fatturapa_out_di/) | 14.0.1.0.5 |  | Dichiarazioni d'intento in fatturapa
-[l10n_it_fatturapa_out_oss](l10n_it_fatturapa_out_oss/) | 14.0.1.0.0 |  | OSS in fatturapa
-[l10n_it_fatturapa_out_rc](l10n_it_fatturapa_out_rc/) | 14.0.1.3.1 | [![eLBati](https://github.com/eLBati.png?size=30px)](https://github.com/eLBati) | Integrazione l10n_it_fatturapa_out e l10n_it_reverse_charge
+[l10n_it_fatturapa_out_dn](l10n_it_fatturapa_out_dn/) | 14.0.1.1.0 |  | DDT in fatture elettroniche
+[l10n_it_fatturapa_out_oss](l10n_it_fatturapa_out_oss/) | 14.0.1.1.0 |  | OSS in fatturapa
+[l10n_it_fatturapa_out_rc](l10n_it_fatturapa_out_rc/) | 14.0.1.4.1 | <a href='https://github.com/eLBati'><img src='https://github.com/eLBati.png' width='32' height='32' style='border-radius:50%;' alt='eLBati'/></a> | Integrazione l10n_it_fatturapa_out e l10n_it_reverse_charge
 [l10n_it_fatturapa_out_sp](l10n_it_fatturapa_out_sp/) | 14.0.1.0.4 |  | Scissione pagamenti in fatturapa
-[l10n_it_fatturapa_out_stamp](l10n_it_fatturapa_out_stamp/) | 14.0.1.0.1 | [![eLBati](https://github.com/eLBati.png?size=30px)](https://github.com/eLBati) | Modulo ponte tra emissione fatture elettroniche e imposta di bollo
+[l10n_it_fatturapa_out_stamp](l10n_it_fatturapa_out_stamp/) | 14.0.1.0.1 | <a href='https://github.com/eLBati'><img src='https://github.com/eLBati.png' width='32' height='32' style='border-radius:50%;' alt='eLBati'/></a> | Modulo ponte tra emissione fatture elettroniche e imposta di bollo
 [l10n_it_fatturapa_out_triple_discount](l10n_it_fatturapa_out_triple_discount/) | 14.0.1.0.0 |  | Modulo ponte tra emissione fatture elettroniche e sconto triplo
 [l10n_it_fatturapa_out_wt](l10n_it_fatturapa_out_wt/) | 14.0.1.0.1 |  | Modulo ponte tra emissione fatture elettroniche e ritenute.
-[l10n_it_fatturapa_pec](l10n_it_fatturapa_pec/) | 14.0.2.5.0 |  | Invio fatture elettroniche tramite PEC
-[l10n_it_fatturapa_sale](l10n_it_fatturapa_sale/) | 14.0.1.0.3 |  | Aggiunge alcuni dati per la fatturazione elettronica nell'ordine di vendita
+[l10n_it_fatturapa_pec](l10n_it_fatturapa_pec/) | 14.0.2.6.1 |  | Invio fatture elettroniche tramite PEC
+[l10n_it_fatturapa_sale](l10n_it_fatturapa_sale/) | 14.0.1.1.0 |  | Aggiunge alcuni dati per la fatturazione elettronica nell'ordine di vendita
 [l10n_it_fatturapa_sdicoop](l10n_it_fatturapa_sdicoop/) | 14.0.1.0.0 |  | Invio fatture elettroniche tramite SDICoop
-[l10n_it_financial_statements_report](l10n_it_financial_statements_report/) | 14.0.1.1.2 |  | Rendicontazione .pdf e .xls per stato patrimoniale e conto economico a sezioni contrapposte
+[l10n_it_financial_statements_report](l10n_it_financial_statements_report/) | 14.0.1.2.0 |  | Rendicontazione .pdf e .xls per stato patrimoniale e conto economico a sezioni contrapposte
 [l10n_it_fiscal_document_type](l10n_it_fiscal_document_type/) | 14.0.1.1.1 |  | ITA - Tipi di documento fiscale per dichiarativi
 [l10n_it_fiscal_payment_term](l10n_it_fiscal_payment_term/) | 14.0.1.1.0 |  | Condizioni di pagamento delle fatture elettroniche
 [l10n_it_fiscalcode](l10n_it_fiscalcode/) | 14.0.1.0.3 |  | ITA - Codice fiscale
-[l10n_it_fiscalcode_sale](l10n_it_fiscalcode_sale/) | 14.0.1.0.0 | [![eLBati](https://github.com/eLBati.png?size=30px)](https://github.com/eLBati) | Mostra il codice fiscale del cliente nella stampa del preventivo
-[l10n_it_intrastat](l10n_it_intrastat/) | 14.0.1.4.3 |  | Riclassificazione merci e servizi per dichiarazioni Intrastat
-[l10n_it_intrastat_statement](l10n_it_intrastat_statement/) | 14.0.1.3.6 |  | Dichiarazione Intrastat per l'Agenzia delle Dogane
+[l10n_it_fiscalcode_sale](l10n_it_fiscalcode_sale/) | 14.0.1.0.0 | <a href='https://github.com/eLBati'><img src='https://github.com/eLBati.png' width='32' height='32' style='border-radius:50%;' alt='eLBati'/></a> | Mostra il codice fiscale del cliente nella stampa del preventivo
+[l10n_it_intrastat](l10n_it_intrastat/) | 14.0.1.6.1 |  | Riclassificazione merci e servizi per dichiarazioni Intrastat
+[l10n_it_intrastat_statement](l10n_it_intrastat_statement/) | 14.0.1.5.1 |  | Dichiarazione Intrastat per l'Agenzia delle Dogane
 [l10n_it_invoices_data_communication](l10n_it_invoices_data_communication/) | 14.0.1.0.2 |  | Comunicazione dati fatture (c.d. "nuovo spesometro" o "esterometro")
 [l10n_it_invoices_data_communication_fatturapa](l10n_it_invoices_data_communication_fatturapa/) | 14.0.1.0.0 |  | Integrazione fatturazione elettronica e comunicazione dati fatture (c.d. "nuovo spesometro")
 [l10n_it_ipa](l10n_it_ipa/) | 14.0.1.0.2 |  | ITA - Codice IPA
 [l10n_it_location_nuts](l10n_it_location_nuts/) | 14.0.1.1.0 |  | Opzioni NUTS specifiche per l'Italia
-[l10n_it_mis_reports_pl_bs](l10n_it_mis_reports_pl_bs/) | 14.0.1.0.0 | [![MarcoCalcagni](https://github.com/MarcoCalcagni.png?size=30px)](https://github.com/MarcoCalcagni) | Modelli "MIS Builder" per il conto economico e lo stato patrimoniale
+[l10n_it_mis_reports_pl_bs](l10n_it_mis_reports_pl_bs/) | 14.0.1.0.0 | <a href='https://github.com/MarcoCalcagni'><img src='https://github.com/MarcoCalcagni.png' width='32' height='32' style='border-radius:50%;' alt='MarcoCalcagni'/></a> | Modelli "MIS Builder" per il conto economico e lo stato patrimoniale
+[l10n_it_partner_statement_riba](l10n_it_partner_statement_riba/) | 14.0.1.1.0 |  | Visualizzare le RiBa negli estratti conto cliente.
 [l10n_it_payment_reason](l10n_it_payment_reason/) | 14.0.1.1.0 |  | Aggiunge la tabella delle causali di pagamento da usare ad esempio nelle ritenute d'acconto
 [l10n_it_pec](l10n_it_pec/) | 14.0.1.0.0 |  | Aggiunge il campo email PEC al partner
 [l10n_it_pos_fatturapa](l10n_it_pos_fatturapa/) | 14.0.1.0.0 |  | Gestione dati fattura elettronica del cliente all'internodell'interfaccia del POS
-[l10n_it_pos_fiscalcode](l10n_it_pos_fiscalcode/) | 14.0.1.0.1 | [![eLBati](https://github.com/eLBati.png?size=30px)](https://github.com/eLBati) | Gestione codice fiscale del cliente all'interno dell'interfaccia del POS
+[l10n_it_pos_fiscalcode](l10n_it_pos_fiscalcode/) | 14.0.1.0.1 | <a href='https://github.com/eLBati'><img src='https://github.com/eLBati.png' width='32' height='32' style='border-radius:50%;' alt='eLBati'/></a> | Gestione codice fiscale del cliente all'interno dell'interfaccia del POS
 [l10n_it_rea](l10n_it_rea/) | 14.0.1.0.4 |  | Gestisce i campi del Repertorio Economico Amministrativo
-[l10n_it_reverse_charge](l10n_it_reverse_charge/) | 14.0.1.2.7 |  | Inversione contabile
-[l10n_it_riba_sale_commission](l10n_it_riba_sale_commission/) | 14.0.1.1.2 | [![odooNextev](https://github.com/odooNextev.png?size=30px)](https://github.com/odooNextev) [![aleuffre](https://github.com/aleuffre.png?size=30px)](https://github.com/aleuffre) [![renda-dev](https://github.com/renda-dev.png?size=30px)](https://github.com/renda-dev) [![PicchiSeba](https://github.com/PicchiSeba.png?size=30px)](https://github.com/PicchiSeba) | Modulo ponte tra provvigioni agenti e RiBa
-[l10n_it_ricevute_bancarie](l10n_it_ricevute_bancarie/) | 14.0.1.10.2 |  | Ricevute bancarie
-[l10n_it_sdi_channel](l10n_it_sdi_channel/) | 14.0.2.4.0 | [![sergiocorato](https://github.com/sergiocorato.png?size=30px)](https://github.com/sergiocorato) | Aggiunge il canale di invio/ricezione dei file XML attraverso lo SdI
+[l10n_it_reverse_charge](l10n_it_reverse_charge/) | 14.0.1.2.12 |  | Inversione contabile
+[l10n_it_reverse_charge_start_end_dates](l10n_it_reverse_charge_start_end_dates/) | 14.0.1.0.0 |  | Gestione delle date di competenza per le autofatture in reverse charge
+[l10n_it_riba_queued](l10n_it_riba_queued/) | 14.0.1.1.0 |  | Pagare righe RiBa in modo asincrono.
+[l10n_it_riba_sale_commission](l10n_it_riba_sale_commission/) | 14.0.1.1.2 | <a href='https://github.com/odooNextev'><img src='https://github.com/odooNextev.png' width='32' height='32' style='border-radius:50%;' alt='odooNextev'/></a> <a href='https://github.com/aleuffre'><img src='https://github.com/aleuffre.png' width='32' height='32' style='border-radius:50%;' alt='aleuffre'/></a> <a href='https://github.com/renda-dev'><img src='https://github.com/renda-dev.png' width='32' height='32' style='border-radius:50%;' alt='renda-dev'/></a> <a href='https://github.com/PicchiSeba'><img src='https://github.com/PicchiSeba.png' width='32' height='32' style='border-radius:50%;' alt='PicchiSeba'/></a> | Modulo ponte tra provvigioni agenti e RiBa
+[l10n_it_ricevute_bancarie](l10n_it_ricevute_bancarie/) | 14.0.1.20.0 |  | Ricevute bancarie
+[l10n_it_sct_cbi](l10n_it_sct_cbi/) | 14.0.1.0.0 | <a href='https://github.com/SirAionTech'><img src='https://github.com/SirAionTech.png' width='32' height='32' style='border-radius:50%;' alt='SirAionTech'/></a> | Usare gli standard CBI per SEPA Credit Transfer
+[l10n_it_sdd_cbi](l10n_it_sdd_cbi/) | 14.0.1.0.1 |  | Create SEPA files for CBI SDD Italy
+[l10n_it_sdi_channel](l10n_it_sdi_channel/) | 14.0.2.4.0 | <a href='https://github.com/sergiocorato'><img src='https://github.com/sergiocorato.png' width='32' height='32' style='border-radius:50%;' alt='sergiocorato'/></a> | Aggiunge il canale di invio/ricezione dei file XML attraverso lo SdI
 [l10n_it_split_payment](l10n_it_split_payment/) | 14.0.1.0.7 |  | Scissione pagamenti
 [l10n_it_vat_payability](l10n_it_vat_payability/) | 14.0.1.0.2 |  | ITA - Esigibilità IVA
-[l10n_it_vat_registries](l10n_it_vat_registries/) | 14.0.1.1.0 |  | ITA - Registri IVA
+[l10n_it_vat_registries](l10n_it_vat_registries/) | 14.0.1.3.0 |  | ITA - Registri IVA
 [l10n_it_vat_registries_split_payment](l10n_it_vat_registries_split_payment/) | 14.0.1.1.1 |  | Modulo di congiunzione tra registri IVA e scissione dei pagamenti
+[l10n_it_vat_settlement_date](l10n_it_vat_settlement_date/) | 14.0.1.1.0 |  | Settlement date for VAT Statement
 [l10n_it_vat_statement_communication](l10n_it_vat_statement_communication/) | 14.0.1.0.2 |  | Comunicazione liquidazione IVA ed esportazione file xmlconforme alle specifiche dell'Agenzia delle Entrate
 [l10n_it_vat_statement_split_payment](l10n_it_vat_statement_split_payment/) | 14.0.1.0.2 |  | Migliora la liquidazione dell'IVA tenendo in considerazione la scissione dei pagamenti
 [l10n_it_website_portal_fatturapa](l10n_it_website_portal_fatturapa/) | 14.0.1.0.0 |  | Add fatturapa fields and checks in frontend user's details
@@ -96,9 +103,12 @@ addon | version | maintainers | summary
 [l10n_it_website_portal_ipa](l10n_it_website_portal_ipa/) | 14.0.1.0.0 |  | Aggiunge l'indice PA (IPA) tra i dettagli dell'utente nel portale.
 [l10n_it_website_sale_fatturapa](l10n_it_website_sale_fatturapa/) | 14.0.1.0.0 |  | Aggiunge i campi necessari alla fatturazione elettronica nel form del checkout
 [l10n_it_website_sale_fiscalcode](l10n_it_website_sale_fiscalcode/) | 14.0.1.1.0 |  | Website Sale FiscalCode
-[l10n_it_withholding_tax](l10n_it_withholding_tax/) | 14.0.1.1.12 |  | ITA - Ritenute d'acconto
-[l10n_it_withholding_tax_financial_report](l10n_it_withholding_tax_financial_report/) | 14.0.1.0.0 | [![eLBati](https://github.com/eLBati.png?size=30px)](https://github.com/eLBati) | Integrazione Ritenute d'acconto e Rendiconti contabili
+[l10n_it_withholding_tax](l10n_it_withholding_tax/) | 14.0.1.2.2 |  | ITA - Ritenute d'acconto
+[l10n_it_withholding_tax_financial_report](l10n_it_withholding_tax_financial_report/) | 14.0.1.0.0 | <a href='https://github.com/eLBati'><img src='https://github.com/eLBati.png' width='32' height='32' style='border-radius:50%;' alt='eLBati'/></a> | Integrazione Ritenute d'acconto e Rendiconti contabili
+[l10n_it_withholding_tax_mis_builder](l10n_it_withholding_tax_mis_builder/) | 14.0.1.0.0 |  | ITA - Ritenute d'acconto - MIS Builder
+[l10n_it_withholding_tax_mis_builder_cash_flow](l10n_it_withholding_tax_mis_builder_cash_flow/) | 14.0.1.0.0 |  | ITA - Ritenute d'acconto - MIS Builder - Cash Flow
 [l10n_it_withholding_tax_payment](l10n_it_withholding_tax_payment/) | 14.0.1.0.2 |  | Gestisce le ritenute sulle fatture e sui pagamenti
+[l10n_it_withholding_tax_payment_order](l10n_it_withholding_tax_payment_order/) | 14.0.1.0.0 | <a href='https://github.com/eLBati'><img src='https://github.com/eLBati.png' width='32' height='32' style='border-radius:50%;' alt='eLBati'/></a> | Integrazione Ritenute d'acconto e Ordini di pagamento
 [l10n_it_withholding_tax_reason](l10n_it_withholding_tax_reason/) | 14.0.1.0.2 |  | ITA - Causali pagamento per ritenute d'acconto
 
 [//]: # (end addons)

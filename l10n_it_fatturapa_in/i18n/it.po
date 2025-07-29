@@ -7,22 +7,22 @@ msgstr ""
 "Project-Id-Version: Odoo Server 10.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-09-27 08:07+0000\n"
-"PO-Revision-Date: 2024-05-28 09:37+0000\n"
-"Last-Translator: mymage <stefano.consolaro@mymage.it>\n"
+"PO-Revision-Date: 2025-06-26 10:25+0000\n"
+"Last-Translator: Francesco Foresti <francesco.foresti@ooops404.com>\n"
 "Language-Team: \n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.17\n"
+"X-Generator: Weblate 5.10.4\n"
 
 #. module: l10n_it_fatturapa_in
 #: model_terms:ir.ui.view,arch_db:l10n_it_fatturapa_in.view_account_config_settings_ftpa_in
 msgid ""
 "<span class=\"fa fa-lg fa-building-o\" title=\"Values set here are company-"
-"specific.\" aria-label=\"Values set here are company-specific.\" groups="
-"\"base.group_multi_company\" role=\"img\"/>"
+"specific.\" aria-label=\"Values set here are company-specific.\" "
+"groups=\"base.group_multi_company\" role=\"img\"/>"
 msgstr ""
 "<span class=\"fa fa-lg fa-building-o\" title=\"I valori impostati qui sono "
 "specifici per azienda.\" aria-label=\"I valori impostati qui sono specifici "
@@ -32,15 +32,15 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:l10n_it_fatturapa_in.view_account_config_settings_ftpa_in
 msgid ""
 "<span class=\"o_form_label\">Supplier Invoices</span>\n"
-"                            <span class=\"fa fa-lg fa-building-o\" title="
-"\"Values set here are company-specific.\" aria-label=\"Values set here are "
-"company-specific.\" groups=\"base.group_multi_company\" role=\"img\"/>"
+"                            <span class=\"fa fa-lg fa-building-o\" "
+"title=\"Values set here are company-specific.\" aria-label=\"Values set here "
+"are company-specific.\" groups=\"base.group_multi_company\" role=\"img\"/>"
 msgstr ""
 "<span class=\"o_form_label\">Fatture fornitori</span>\n"
 "                            <span class=\"fa fa-lg fa-building-o\" title=\"I "
 "valori impostati qui sono specifici per azienda.\" aria-label=\"I valori "
-"impostati qui sono specifici per azienda.\" groups=\"base.group_multi_company"
-"\" role=\"img\"/>"
+"impostati qui sono specifici per azienda.\" groups=\"base."
+"group_multi_company\" role=\"img\"/>"
 
 #. module: l10n_it_fatturapa_in
 #: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_fatturapa_attachment_in__access_token
@@ -63,6 +63,26 @@ msgstr "Conto usato per gli arrotondamenti attivi dell'importo delle fatture."
 #: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_fatturapa_attachment_in__message_needaction
 msgid "Action Needed"
 msgstr "Azione richiesta"
+
+#. module: l10n_it_fatturapa_in
+#: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_fatturapa_attachment_in__activity_ids
+msgid "Activities"
+msgstr "Attività"
+
+#. module: l10n_it_fatturapa_in
+#: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_fatturapa_attachment_in__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr "Decorazione eccezione attività"
+
+#. module: l10n_it_fatturapa_in
+#: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_fatturapa_attachment_in__activity_state
+msgid "Activity State"
+msgstr "Stato attività"
+
+#. module: l10n_it_fatturapa_in
+#: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_fatturapa_attachment_in__activity_type_icon
+msgid "Activity Type Icon"
+msgstr "Icona tipo attività"
 
 #. module: l10n_it_fatturapa_in
 #: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_einvoice_line__admin_ref
@@ -150,12 +170,6 @@ msgstr ""
 "Totale imposte: {bill_tax}"
 
 #. module: l10n_it_fatturapa_in
-#: code:addons/l10n_it_fatturapa_in/wizard/wizard_import_fatturapa.py:0
-#, python-format
-msgid "Bill total %s is different from document total amount %s"
-msgstr "Il totale fattura %s è diverso dall'importo totale del documento %s"
-
-#. module: l10n_it_fatturapa_in
 #: model_terms:ir.ui.view,arch_db:l10n_it_fatturapa_in.view_fatturapa_in_attachment_form
 msgid "Bills"
 msgstr "Fatture"
@@ -231,8 +245,12 @@ msgstr "Il campo nome azienda contiene \"%s\", il sistema contiene \"%s\""
 #. module: l10n_it_fatturapa_in
 #: code:addons/l10n_it_fatturapa_in/wizard/wizard_import_fatturapa.py:0
 #, python-format
-msgid "Computed amount untaxed %s is different from summary data %s"
-msgstr "L'imponibile calcolato %s è diverso da quello dei dati di riepilogo %s"
+msgid ""
+"Computed amount untaxed %(amount_untaxed)s is different from summary data "
+"%(summary_data)s"
+msgstr ""
+"L'imponibile calcolato %(amount_untaxed)s è diverso da quello dei dati di "
+"riepilogo %(summary_data)s"
 
 #. module: l10n_it_fatturapa_in
 #: model:ir.model,name:l10n_it_fatturapa_in.model_res_config_settings
@@ -402,6 +420,7 @@ msgid "Discount and Supplement Details"
 msgstr "Dettagli sconto e maggiorazione"
 
 #. module: l10n_it_fatturapa_in
+#: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_fatturapa_attachment_in__discount_decimal_digits
 #: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_wizard_import_fatturapa__discount_decimal_digits
 msgid "Discounts decimal digits"
 msgstr "Cifre decimali sconti"
@@ -608,7 +627,7 @@ msgstr "Contenuto file (base64)"
 #. module: l10n_it_fatturapa_in
 #: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_fatturapa_attachment_in__raw
 msgid "File Content (raw)"
-msgstr "Contenuto file (grezzo)"
+msgstr "Contenuto file (raw)"
 
 #. module: l10n_it_fatturapa_in
 #: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_fatturapa_attachment_in__file_size
@@ -631,6 +650,11 @@ msgid "Followers (Partners)"
 msgstr "Seguito da (partner)"
 
 #. module: l10n_it_fatturapa_in
+#: model:ir.model.fields,help:l10n_it_fatturapa_in.field_fatturapa_attachment_in__activity_type_icon
+msgid "Font awesome icon e.g. fa-tasks"
+msgstr "Icona Font Awesome es. fa-tasks"
+
+#. module: l10n_it_fatturapa_in
 #: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_account_bank_statement_line__e_invoice_force_validation
 #: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_account_move__e_invoice_force_validation
 #: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_account_payment__e_invoice_force_validation
@@ -641,12 +665,6 @@ msgstr "Forza validazione e-fattura"
 #: model_terms:ir.ui.view,arch_db:l10n_it_fatturapa_in.view_invoice_form_fatturapa_in
 msgid "General Data"
 msgstr "Dati generali"
-
-#. module: l10n_it_fatturapa_in
-#: code:addons/l10n_it_fatturapa_in/wizard/wizard_import_fatturapa.py:0
-#, python-format
-msgid "Global bill discount from document general data"
-msgstr "Sconto globale fattura dai dati generali del documento"
 
 #. module: l10n_it_fatturapa_in
 #: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_account_move__id
@@ -664,6 +682,16 @@ msgstr "Sconto globale fattura dai dati generali del documento"
 #: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_wizard_link_to_invoice_line__id
 msgid "ID"
 msgstr "ID"
+
+#. module: l10n_it_fatturapa_in
+#: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_fatturapa_attachment_in__activity_exception_icon
+msgid "Icon"
+msgstr "Icona"
+
+#. module: l10n_it_fatturapa_in
+#: model:ir.model.fields,help:l10n_it_fatturapa_in.field_fatturapa_attachment_in__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr "Icona per indicare un'attività eccezione."
 
 #. module: l10n_it_fatturapa_in
 #: model:ir.model.fields,help:l10n_it_fatturapa_in.field_fatturapa_attachment_in__message_needaction
@@ -941,6 +969,11 @@ msgstr ""
 "fattura elettronica."
 
 #. module: l10n_it_fatturapa_in
+#: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_fatturapa_attachment_in__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr "Scadenza mia attività"
+
+#. module: l10n_it_fatturapa_in
 #: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_fatturapa_attachment_in__name
 msgid "Name"
 msgstr "Nome"
@@ -962,6 +995,21 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_einvoice_line__tax_kind
 msgid "Nature"
 msgstr "Natura"
+
+#. module: l10n_it_fatturapa_in
+#: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_fatturapa_attachment_in__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr "Scadenza prossima attività"
+
+#. module: l10n_it_fatturapa_in
+#: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_fatturapa_attachment_in__activity_summary
+msgid "Next Activity Summary"
+msgstr "Riepilogo prossima attività"
+
+#. module: l10n_it_fatturapa_in
+#: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_fatturapa_attachment_in__activity_type_id
+msgid "Next Activity Type"
+msgstr "Tipo prossima attività"
 
 #. module: l10n_it_fatturapa_in
 #: code:addons/l10n_it_fatturapa_in/wizard/efattura.py:0
@@ -1093,6 +1141,7 @@ msgid "Preview link"
 msgstr "Collegamento di anteprima"
 
 #. module: l10n_it_fatturapa_in
+#: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_fatturapa_attachment_in__price_decimal_digits
 #: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_wizard_import_fatturapa__price_decimal_digits
 msgid "Prices decimal digits"
 msgstr "Cifre decimali prezzi"
@@ -1125,6 +1174,7 @@ msgid "Province ( %s ) not present in your system"
 msgstr "Provincia ( %s ) non presente nel sistema"
 
 #. module: l10n_it_fatturapa_in
+#: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_fatturapa_attachment_in__quantity_decimal_digits
 #: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_wizard_import_fatturapa__quantity_decimal_digits
 msgid "Quantities decimal digits"
 msgstr "Cifre decimali quantità"
@@ -1197,6 +1247,11 @@ msgstr "Modello risorsa"
 #: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_fatturapa_attachment_in__res_name
 msgid "Resource Name"
 msgstr "Nome risorsa"
+
+#. module: l10n_it_fatturapa_in
+#: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_fatturapa_attachment_in__activity_user_id
+msgid "Responsible User"
+msgstr "Utente responsabile"
 
 #. module: l10n_it_fatturapa_in
 #: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_res_company__arrotondamenti_passivi_account_id
@@ -1273,6 +1328,19 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:l10n_it_fatturapa_in.view_invoice_form_fatturapa_in
 msgid "Stable Organization"
 msgstr "Stabile organizzazione"
+
+#. module: l10n_it_fatturapa_in
+#: model:ir.model.fields,help:l10n_it_fatturapa_in.field_fatturapa_attachment_in__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr ""
+"Stato in base alle attività\n"
+"Scaduto: la data richiesta è trascorsa\n"
+"Oggi: la data attività è oggi\n"
+"Pianificato: attività future."
 
 #. module: l10n_it_fatturapa_in
 #: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_fatturapa_attachment_in__store_fname
@@ -1450,6 +1518,11 @@ msgid "Type"
 msgstr "Tipo"
 
 #. module: l10n_it_fatturapa_in
+#: model:ir.model.fields,help:l10n_it_fatturapa_in.field_fatturapa_attachment_in__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr "Tipo di attività eccezione sul record."
+
+#. module: l10n_it_fatturapa_in
 #: code:addons/l10n_it_fatturapa_in/wizard/efattura.py:0
 #, python-format
 msgid "Unexpected root element: %s"
@@ -1505,6 +1578,33 @@ msgstr ""
 #: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_einvoice_line__tax_amount
 msgid "VAT Rate"
 msgstr "Aliquota IVA"
+
+#. module: l10n_it_fatturapa_in
+#: model:ir.model.fields,help:l10n_it_fatturapa_in.field_fatturapa_attachment_in__discount_decimal_digits
+msgid ""
+"Value used during import of this e-invoice to override \"Discount\" "
+"precision."
+msgstr ""
+"Valore utilizzato durante l'importazione di questa fattura elettronica per "
+"sovrascrivere la precisione \"Sconto\"."
+
+#. module: l10n_it_fatturapa_in
+#: model:ir.model.fields,help:l10n_it_fatturapa_in.field_fatturapa_attachment_in__price_decimal_digits
+msgid ""
+"Value used during import of this e-invoice to override \"Product Price\" "
+"precision."
+msgstr ""
+"Valore utilizzato durante l'importazione di questa fattura elettronica per "
+"sovrascrivere la precisione del \"Prezzo del prodotto\"."
+
+#. module: l10n_it_fatturapa_in
+#: model:ir.model.fields,help:l10n_it_fatturapa_in.field_fatturapa_attachment_in__quantity_decimal_digits
+msgid ""
+"Value used during import of this e-invoice to override \"Product Unit of "
+"Measure\" precision."
+msgstr ""
+"Valore utilizzato durante l'importazione di questa fattura elettronica per "
+"sovrascrivere la precisione \"Unità di misura del prodotto\"."
 
 #. module: l10n_it_fatturapa_in
 #: model:ir.model.fields,field_description:l10n_it_fatturapa_in.field_res_company__in_invoice_registration_date
@@ -1622,6 +1722,19 @@ msgstr ""
 #, python-format
 msgid "You can select only one XML file to link."
 msgstr "È possibile selezionare solo un file XML da collegare."
+
+#, python-format
+#~ msgid "Bill total %s is different from document total amount %s"
+#~ msgstr "Il totale fattura %s è diverso dall'importo totale del documento %s"
+
+#, python-format
+#~ msgid "Computed amount untaxed %s is different from summary data %s"
+#~ msgstr ""
+#~ "L'imponibile calcolato %s è diverso da quello dei dati di riepilogo %s"
+
+#, python-format
+#~ msgid "Global bill discount from document general data"
+#~ msgstr "Sconto globale fattura dai dati generali del documento"
 
 #, python-format
 #~ msgid "File is linked to bills yet."

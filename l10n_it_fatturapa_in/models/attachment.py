@@ -9,7 +9,17 @@ from ..wizard import efattura
 
 _logger = logging.getLogger(__name__)
 
-SELF_INVOICE_TYPES = ("TD16", "TD17", "TD18", "TD19", "TD20", "TD21", "TD27", "TD28")
+SELF_INVOICE_TYPES = (
+    "TD16",
+    "TD17",
+    "TD18",
+    "TD19",
+    "TD20",
+    "TD21",
+    "TD22",
+    "TD27",
+    "TD28",
+)
 
 
 class FatturaPAAttachmentIn(models.Model):
@@ -70,6 +80,24 @@ class FatturaPAAttachmentIn(models.Model):
     linked_invoice_id_xml = fields.Char(
         compute="_compute_linked_invoice_id_xml",
         store=True,
+    )
+    price_decimal_digits = fields.Integer(
+        string="Prices decimal digits",
+        help="Value used during import of this e-invoice "
+        'to override "Product Price" precision.',
+        readonly=True,
+    )
+    quantity_decimal_digits = fields.Integer(
+        string="Quantities decimal digits",
+        help="Value used during import of this e-invoice "
+        'to override "Product Unit of Measure" precision.',
+        readonly=True,
+    )
+    discount_decimal_digits = fields.Integer(
+        string="Discounts decimal digits",
+        help="Value used during import of this e-invoice "
+        'to override "Discount" precision.',
+        readonly=True,
     )
 
     _sql_constraints = [
@@ -160,6 +188,7 @@ class FatturaPAAttachmentIn(models.Model):
 
     @api.depends("ir_attachment_id.datas")
     def _compute_xml_data(self):
+        invoice_model = self.env["account.move"]
         for att in self:
             att.xml_supplier_id = False
             att.invoices_number = False
@@ -174,11 +203,14 @@ class FatturaPAAttachmentIn(models.Model):
             # Look into each invoice to compute the following values
             invoices_date = []
             for invoice_body in fatt.FatturaElettronicaBody:
-                # Assign this directly so that rounding is applied each time
-                att.invoices_total += float(
-                    invoice_body.DatiGenerali.DatiGeneraliDocumento.ImportoTotaleDocumento
-                    or 0
+                amount_untaxed = invoice_model.compute_xml_amount_untaxed(invoice_body)
+                amount_tax = invoice_model.compute_xml_amount_tax(
+                    invoice_body.DatiBeniServizi.DatiRiepilogo
                 )
+                amount_total = invoice_model.compute_xml_amount_total(
+                    invoice_body, amount_untaxed, amount_tax
+                )
+                att.invoices_total += amount_total
 
                 document_date = invoice_body.DatiGenerali.DatiGeneraliDocumento.Data
                 invoice_date = format_date(
@@ -198,7 +230,7 @@ class FatturaPAAttachmentIn(models.Model):
             # for the following fields
             att.invoices_number = len(fatt.FatturaElettronicaBody)
 
-            # Partner creation that may happen in `getCedPrest`
+            # Partner creation that may happen in `get_partner_from_einvoice_node`
             # triggers a recomputation
             # that messes up the cache of some fields if they are set
             # (more properly, put in cache) afterwards;
@@ -208,7 +240,7 @@ class FatturaPAAttachmentIn(models.Model):
             wiz_obj = self.env["wizard.import.fatturapa"].with_context(
                 from_attachment=att
             )
-            partner_id = wiz_obj.getCedPrest(cedentePrestatore)
+            partner_id = wiz_obj.get_partner_from_einvoice_node(cedentePrestatore)
             att.xml_supplier_id = partner_id
             inconsistencies = wiz_obj.env.context.get("inconsistencies", False)
             att.inconsistencies = inconsistencies

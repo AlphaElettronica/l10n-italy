@@ -425,6 +425,26 @@ class TestDeclarationOfIntent(AccountTestInvoicingCommon):
             1,
         )
 
+    def test_invoice_delete(self):
+        invoice = self._create_invoice(
+            "test_invoice_repost", self.partner1, tax=self.tax1
+        )
+        invoice_form = Form(invoice)
+        for tax in (self.tax2, self.tax22):
+            self._add_invoice_line_id(invoice_form, tax=tax)
+        invoice = invoice_form.save()
+        invoice.action_post()
+        invoice.button_draft()
+        invoice.with_context(force_delete=True).unlink()
+        self.assertEqual(
+            len(
+                self.declaration1.line_ids.filtered(
+                    lambda line: line.invoice_id == invoice
+                )
+            ),
+            0,
+        )
+
     def test_multi_company(self):
         """Check that a user can only see and create declarations in his company."""
         self.env = self.env(user=self.other_user)
@@ -510,3 +530,50 @@ class TestDeclarationOfIntent(AccountTestInvoicingCommon):
         else:
             payments = action["domain"][0][2]
             self.assertTrue(len(payments) > 1)
+
+    def test_multiple_valid(self):
+        """
+        Check multi declarations validation for same partner.
+        """
+        declaration_model = self.env["l10n_it_declaration_of_intent.declaration"].sudo()
+        post_used_amount2 = self.declaration2.used_amount
+        post_used_amount3 = self.declaration3.used_amount
+        self.assertAlmostEqual(post_used_amount2, 0.0, 2)
+        self.assertAlmostEqual(post_used_amount3, 0.0, 2)
+        valid_declarations = declaration_model.get_valid(
+            type_d="out", partner_id=self.partner2.id, date=self.today_date
+        )
+        self.assertEqual(valid_declarations, self.declaration2 | self.declaration3)
+        invoice6 = self._create_invoice(
+            "test_multiple_valid", self.partner2, tax=self.tax1
+        )
+        invoice6.action_post()
+        new_post_used_amount2 = self.declaration2.used_amount
+        new_post_used_amount3 = self.declaration3.used_amount
+        self.assertAlmostEqual(new_post_used_amount2, 900.0, 2)
+        self.assertAlmostEqual(new_post_used_amount3, 0.0, 2)
+
+    def test_fallback(self):
+        """If multiple declarations are available for an invoice,
+        they are used sequentially."""
+        # Arrange
+        tax = self.tax1
+        invoice = self.init_invoice(
+            "out_invoice",
+            amounts=[500, 600],
+            invoice_date=self.today_date,
+            partner=self.partner2,
+            taxes=self.tax1,
+        )
+        declarations = invoice.get_declarations()
+        # pre-condition
+        self.assertGreater(len(declarations), 1)
+        self.assertTrue(all([tax in d.taxes_ids for d in declarations]))
+        self.assertTrue(all([d.available_amount == 1000 for d in declarations]))
+
+        # Act
+        invoice.action_post()
+
+        # Assert
+        self.assertEqual(declarations[0].available_amount, 0)
+        self.assertEqual(declarations[1].available_amount, 900)

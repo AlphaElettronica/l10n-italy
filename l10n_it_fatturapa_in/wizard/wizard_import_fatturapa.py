@@ -1,11 +1,13 @@
 #  Copyright 2022 Simone Rubino - TAKOBI
+#  Copyright 2024 Simone Rubino - Aion Tech
 #  License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
 import logging
 import re
+import warnings
 from datetime import datetime
 
-from odoo import api, fields, models, registry
+from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.fields import first
 from odoo.osv import expression
@@ -289,6 +291,7 @@ class WizardImportFatturapa(models.TransientModel):
                 ),
                 "eori_code": DatiAnagrafici.Anagrafica.CodEORI or "",
                 "country_id": country_id,
+                "company_id": self.env.company.id,
             }
             if DatiAnagrafici.Anagrafica.Nome:
                 vals["firstname"] = DatiAnagrafici.Anagrafica.Nome
@@ -299,12 +302,18 @@ class WizardImportFatturapa(models.TransientModel):
 
             return partner_model.create(vals).id
 
-    def getCedPrest(self, cedPrest):
+    def get_partner_from_einvoice_node(self, partner_node):
+        """
+        Parameters
+        ----------
+        partner_node : the XML node containing "DatiAnagrafici"
+        For example CedentePrestatore or CessionarioCommittente
+        """
         partner_model = self.env["res.partner"]
         # Assume that any non-IT VAT coming from SdI is correct
         partner_id = self.with_context(
             fatturapa_in_skip_no_it_vat_check=True,
-        ).getPartnerBase(cedPrest.DatiAnagrafici)
+        ).getPartnerBase(partner_node.DatiAnagrafici)
         no_contact_update = False
         if partner_id:
             no_contact_update = partner_model.browse(
@@ -318,16 +327,20 @@ class WizardImportFatturapa(models.TransientModel):
                     map(
                         str,
                         filter(
-                            None, (cedPrest.Sede.Indirizzo, cedPrest.Sede.NumeroCivico)
+                            None,
+                            (
+                                partner_node.Sede.Indirizzo,
+                                partner_node.Sede.NumeroCivico,
+                            ),
                         ),
                     )
                 ),
-                "zip": cedPrest.Sede.CAP,
-                "city": cedPrest.Sede.Comune,
-                "register": cedPrest.DatiAnagrafici.AlboProfessionale or "",
+                "zip": partner_node.Sede.CAP,
+                "city": partner_node.Sede.Comune,
+                "register": partner_node.DatiAnagrafici.AlboProfessionale or "",
             }
-            if cedPrest.DatiAnagrafici.ProvinciaAlbo:
-                ProvinciaAlbo = cedPrest.DatiAnagrafici.ProvinciaAlbo
+            if partner_node.DatiAnagrafici.ProvinciaAlbo:
+                ProvinciaAlbo = partner_node.DatiAnagrafici.ProvinciaAlbo
                 prov = self.ProvinceByCode(ProvinciaAlbo)
                 if not prov:
                     self.log_inconsistency(
@@ -336,8 +349,8 @@ class WizardImportFatturapa(models.TransientModel):
                     )
                 else:
                     vals["register_province"] = prov[0].id
-            if cedPrest.Sede.Provincia:
-                Provincia = cedPrest.Sede.Provincia
+            if partner_node.Sede.Provincia:
+                Provincia = partner_node.Sede.Provincia
                 prov_sede = self.ProvinceByCode(Provincia)
                 if not prov_sede:
                     self.log_inconsistency(
@@ -346,11 +359,11 @@ class WizardImportFatturapa(models.TransientModel):
                 else:
                     vals["state_id"] = prov_sede[0].id
 
-            vals["register_code"] = cedPrest.DatiAnagrafici.NumeroIscrizioneAlbo
-            vals["register_regdate"] = cedPrest.DatiAnagrafici.DataIscrizioneAlbo
+            vals["register_code"] = partner_node.DatiAnagrafici.NumeroIscrizioneAlbo
+            vals["register_regdate"] = partner_node.DatiAnagrafici.DataIscrizioneAlbo
 
-            if cedPrest.DatiAnagrafici.RegimeFiscale:
-                rfPos = cedPrest.DatiAnagrafici.RegimeFiscale
+            if partner_node.DatiAnagrafici.RegimeFiscale:
+                rfPos = partner_node.DatiAnagrafici.RegimeFiscale
                 FiscalPos = fiscalPosModel.search([("code", "=", rfPos)])
                 if not FiscalPos:
                     raise UserError(
@@ -359,8 +372,8 @@ class WizardImportFatturapa(models.TransientModel):
                 else:
                     vals["register_fiscalpos"] = FiscalPos[0].id
 
-            if cedPrest.IscrizioneREA:
-                REA = cedPrest.IscrizioneREA
+            if partner_node.IscrizioneREA:
+                REA = partner_node.IscrizioneREA
                 offices = self.ProvinceByCode(REA.Ufficio)
                 rea_nr = REA.NumeroREA
 
@@ -403,13 +416,23 @@ class WizardImportFatturapa(models.TransientModel):
                 vals["rea_member_type"] = REA.SocioUnico or False
                 vals["rea_liquidation_state"] = REA.StatoLiquidazione or False
 
-            if cedPrest.Contatti:
-                if cedPrest.Contatti.Telefono:
-                    vals["phone"] = cedPrest.Contatti.Telefono
-                if cedPrest.Contatti.Email:
-                    vals["email"] = cedPrest.Contatti.Email
+            if partner_node.Contatti:
+                if partner_node.Contatti.Telefono:
+                    vals["phone"] = partner_node.Contatti.Telefono
+                if partner_node.Contatti.Email:
+                    vals["email"] = partner_node.Contatti.Email
             partner_model.browse(partner_id).write(vals)
         return partner_id
+
+    def getCedPrest(self, cedPrest):
+        """Kept for retrocompatibility."""
+        warnings.warn(
+            "function getCedPrest is deprecated. It has been renamed to "
+            "get_partner_from_einvoice_node",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        self.get_partner_from_einvoice_node(cedPrest)
 
     def getCarrirerPartner(self, Carrier):
         partner_model = self.env["res.partner"]
@@ -783,47 +806,8 @@ class WizardImportFatturapa(models.TransientModel):
         discount = (1 - (line_unit / float(DettaglioLinea.PrezzoUnitario))) * 100.0
         return discount
 
-    def _addGlobalDiscount(self, invoice_id, DatiGeneraliDocumento):
-        discount = 0.0
-        if (
-            DatiGeneraliDocumento.ScontoMaggiorazione
-            and self.e_invoice_detail_level == "2"
-        ):
-            invoice = self.env["account.move"].browse(invoice_id)
-            for DiscRise in DatiGeneraliDocumento.ScontoMaggiorazione:
-                if DiscRise.Percentuale:
-                    amount = invoice.amount_total * (float(DiscRise.Percentuale) / 100)
-                    if DiscRise.Tipo == "SC":
-                        discount -= amount
-                    elif DiscRise.Tipo == "MG":
-                        discount += amount
-                elif DiscRise.Importo:
-                    if DiscRise.Tipo == "SC":
-                        discount -= float(DiscRise.Importo)
-                    elif DiscRise.Tipo == "MG":
-                        discount += float(DiscRise.Importo)
-            company = invoice.company_id
-            global_discount_product = company.sconto_maggiorazione_product_id
-            credit_account = self.get_credit_account(
-                product=global_discount_product,
-            )
-            line_vals = {
-                "move_id": invoice_id,
-                "name": _("Global bill discount from document general data"),
-                "account_id": credit_account.id,
-                "price_unit": discount,
-                "quantity": 1,
-            }
-            if global_discount_product:
-                line_vals["product_id"] = global_discount_product.id
-                line_vals["name"] = global_discount_product.name
-                self.adjust_accounting_data(global_discount_product, line_vals)
-            self.env["account.move.line"].with_context(
-                check_move_validity=False
-            ).create(line_vals)
-        return True
-
-    def _createPaymentsLine(self, payment_id, line, partner_id, invoice):
+    def _createPaymentsLine(self, payment_id, line, partner_id, invoice_id):
+        invoice = self.env["account.move"].browse(invoice_id)
         details = line.DettaglioPagamento or False
         if details:
             PaymentModel = self.env["fatturapa.payment.detail"]
@@ -865,7 +849,7 @@ class WizardImportFatturapa(models.TransientModel):
                     "penalty_amount": dline.PenalitaPagamentiRitardati or 0.0,
                     "penalty_date": dline.DataDecorrenzaPenale or False,
                     "payment_code": dline.CodicePagamento or "",
-                    "payment_data_id": payment_id,
+                    "payment_data_id": payment_id.id,
                 }
                 bank = False
                 payment_bank_id = False
@@ -893,7 +877,14 @@ class WizardImportFatturapa(models.TransientModel):
                     iban = dline.IBAN.strip()
                     SearchDom = [
                         ("acc_number", "=", pretty_iban(iban)),
-                        ("partner_id", "=", partner_id),
+                        (
+                            "partner_id",
+                            "in",
+                            (
+                                partner_id,
+                                invoice.company_id.partner_id.id,
+                            ),
+                        ),
                     ]
                     payment_bank_id = False
                     payment_banks = PartnerBankModel.search(SearchDom)
@@ -913,7 +904,7 @@ class WizardImportFatturapa(models.TransientModel):
                     elif not payment_banks and bank:
                         existing_account = PartnerBankModel.search(
                             [
-                                ("acc_number", "=", iban),
+                                ("acc_number", "=", pretty_iban(iban)),
                                 ("company_id", "=", invoice.company_id.id),
                             ]
                         )
@@ -1274,11 +1265,15 @@ class WizardImportFatturapa(models.TransientModel):
         # 2.5
         self.set_attachments_data(FatturaBody, invoice)
 
-        self._addGlobalDiscount(
-            invoice.id, FatturaBody.DatiGenerali.DatiGeneraliDocumento
-        )
-
-        if self.e_invoice_detail_level != "1":
+        # Avoid set roundings if import level is not maximum, because adding
+        # roundings generate problems:
+        #  - generate a tax line in account.move.line
+        #    entries with different values for amount_currency and balance
+        #    raising ``check_amount_currency_balance_sign`` constraint in
+        #    account.move
+        #  - If rounding line is the only line the import generate a refund
+        #    instead of an invoice
+        if self.e_invoice_detail_level == "2":
             self.set_roundings(FatturaBody, invoice)
 
         # compute the invoice
@@ -1539,8 +1534,8 @@ class WizardImportFatturapa(models.TransientModel):
                     term_id = terms[0].id
                 PayDataId = PaymentDataModel.create(
                     {"payment_terms": term_id, "invoice_id": invoice_id}
-                ).id
-                self._createPaymentsLine(PayDataId, PaymentLine, partner_id, invoice)
+                )
+                self._createPaymentsLine(PayDataId, PaymentLine, partner_id, invoice_id)
 
     def set_withholding_tax(self, FatturaBody, invoice_data):
         Withholdings = FatturaBody.DatiGenerali.DatiGeneraliDocumento.DatiRitenuta
@@ -1765,32 +1760,20 @@ class WizardImportFatturapa(models.TransientModel):
         return invoice_lines
 
     def check_invoice_amount(self, invoice, FatturaElettronicaBody):
-        dgd = FatturaElettronicaBody.DatiGenerali.DatiGeneraliDocumento
-        if dgd.ScontoMaggiorazione and dgd.ImportoTotaleDocumento:
-            # assuming that, if someone uses
-            # DatiGeneraliDocumento.ScontoMaggiorazione, also fills
-            # DatiGeneraliDocumento.ImportoTotaleDocumento
-            ImportoTotaleDocumento = float(dgd.ImportoTotaleDocumento)
-            if not float_is_zero(
-                invoice.amount_total - ImportoTotaleDocumento, precision_digits=2
-            ):
-                self.log_inconsistency(
-                    _("Bill total %s is different from " "document total amount %s")
-                    % (invoice.amount_total, ImportoTotaleDocumento)
+        amount_untaxed = invoice.compute_xml_amount_untaxed(FatturaElettronicaBody)
+        if not float_is_zero(
+            invoice.amount_untaxed - amount_untaxed, precision_digits=2
+        ):
+            self.log_inconsistency(
+                _(
+                    "Computed amount untaxed %(amount_untaxed)s is "
+                    "different from summary data %(summary_data)s"
                 )
-        else:
-            # else, we can only check DatiRiepilogo if
-            # DatiGeneraliDocumento.ScontoMaggiorazione is not present,
-            # because otherwise DatiRiepilogo and odoo invoice total would
-            # differ
-            amount_untaxed = invoice.compute_xml_amount_untaxed(FatturaElettronicaBody)
-            if not float_is_zero(
-                invoice.amount_untaxed - amount_untaxed, precision_digits=2
-            ):
-                self.log_inconsistency(
-                    _("Computed amount untaxed %s is different from" " summary data %s")
-                    % (invoice.amount_untaxed, amount_untaxed)
-                )
+                % {
+                    "amount_untaxed": invoice.amount_untaxed,
+                    "summary_data": amount_untaxed,
+                }
+            )
 
     def create_and_get_line_id(self, invoice_line_ids, invoice_line_model, upd_vals):
         invoice_line_id = (
@@ -1800,64 +1783,61 @@ class WizardImportFatturapa(models.TransientModel):
         )
         invoice_line_ids.append(invoice_line_id)
 
-    def _set_decimal_precision(self, precision_name, field_name):
+    def _set_decimal_precision(self, precision_name, field_name, attachments):
         precision = self.env["decimal.precision"].search(
             [("name", "=", precision_name)], limit=1
         )
         different_precisions = original_precision = None
         if precision:
-            precision_id = precision.id
             original_precision = precision.digits
             different_precisions = self[field_name] != original_precision
             if different_precisions:
-                with registry(self.env.cr.dbname).cursor() as new_cr:
-                    # We need a new env (and cursor) because 'digits' property of Float
-                    # fields is retrieved with a new LazyCursor,
-                    # see class Float at odoo.fields,
-                    # so we need to write (commit) to DB in order to make the new
-                    # precision available
-                    new_env = api.Environment(new_cr, self.env.uid, self.env.context)
-                    new_precision = new_env["decimal.precision"].browse(precision_id)
-                    new_precision.sudo().write({"digits": self[field_name]})
-                    new_cr.commit()
+                precision.sudo().digits = self[field_name]
+                attachments.update(
+                    {
+                        field_name: self[field_name],
+                    }
+                )
         return precision, different_precisions, original_precision
 
     def _restore_original_precision(self, precision, original_precision):
-        with registry(self.env.cr.dbname).cursor() as new_cr:
-            new_env = api.Environment(new_cr, self.env.uid, self.env.context)
-            new_price_precision = new_env["decimal.precision"].browse(precision.id)
-            new_price_precision.sudo().write({"digits": original_precision})
-            new_cr.commit()
+        precision.sudo().digits = original_precision
 
     def _get_invoice_partner_id(self, fatt):
         cedentePrestatore = fatt.FatturaElettronicaHeader.CedentePrestatore
-        partner_id = self.getCedPrest(cedentePrestatore)
+        partner_id = self.get_partner_from_einvoice_node(cedentePrestatore)
         return partner_id
 
     def importFatturaPA(self):
         self.ensure_one()
+        fatturapa_attachments = self._get_selected_records()
 
         (
             price_precision,
             different_price_precisions,
             original_price_precision,
-        ) = self._set_decimal_precision("Product Price", "price_decimal_digits")
+        ) = self._set_decimal_precision(
+            "Product Price", "price_decimal_digits", attachments=fatturapa_attachments
+        )
         (
             qty_precision,
             different_qty_precisions,
             original_qty_precision,
         ) = self._set_decimal_precision(
-            "Product Unit of Measure", "quantity_decimal_digits"
+            "Product Unit of Measure",
+            "quantity_decimal_digits",
+            attachments=fatturapa_attachments,
         )
         (
             discount_precision,
             different_discount_precisions,
             original_discount_precision,
-        ) = self._set_decimal_precision("Discount", "discount_decimal_digits")
+        ) = self._set_decimal_precision(
+            "Discount", "discount_decimal_digits", attachments=fatturapa_attachments
+        )
 
         new_invoices = []
         # convert to dict in order to be able to modify context
-        fatturapa_attachments = self._get_selected_records()
         self.env.context = dict(self.env.context)
         for fatturapa_attachment in fatturapa_attachments:
             self.reset_inconsistencies()

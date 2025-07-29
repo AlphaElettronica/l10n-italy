@@ -3,6 +3,7 @@
 # Copyright 2018 Simone Rubino - Agile Business Group
 # Copyright 2018 Sergio Corato
 # Copyright 2019 Alex Comba - Agile Business Group
+# Copyright 2023 Simone Rubino - Aion Tech
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
 import base64
@@ -17,7 +18,7 @@ from odoo.tools.translate import _
 
 from odoo.addons.l10n_it_account.tools.account_tools import encode_for_export
 
-from .efattura import EFatturaOut, format_numbers
+from .efattura import EFatturaOut, format_numbers, fpaToEur
 
 _logger = logging.getLogger(__name__)
 
@@ -101,7 +102,11 @@ class WizardExportFatturapa(models.TransientModel):
             lambda line: line.account_id.user_type_id.type in ("receivable", "payable")
         ):
             payments.append(
-                _Payment(line.date_maturity, line.amount_currency, line.debit)
+                _Payment(
+                    line.date_maturity,
+                    line.amount_currency,
+                    line.debit,
+                )
             )
         return payments
 
@@ -129,6 +134,7 @@ class WizardExportFatturapa(models.TransientModel):
         def _key(tax_id):
             return tax_id.id
 
+        euro = self.env.ref("base.EUR")
         out_computed = {}
         # existing tax lines
         tax_ids = invoice.line_ids.filtered(lambda line: line.tax_line_id)
@@ -141,7 +147,7 @@ class WizardExportFatturapa(models.TransientModel):
                 "Natura": tax_line_id.kind_id.code,
                 # 'Arrotondamento':'',
                 "ImponibileImporto": tax_id.tax_base_amount,
-                "Imposta": tax_id.price_total,
+                "Imposta": fpaToEur(tax_id.price_total, invoice, euro),
                 "EsigibilitaIVA": tax_line_id.payability,
             }
             if tax_line_id.law_reference:
@@ -168,7 +174,9 @@ class WizardExportFatturapa(models.TransientModel):
                         "AliquotaIVA": aliquota,
                         "Natura": tax_id.kind_id.code,
                         # 'Arrotondamento':'',
-                        "ImponibileImporto": line.price_subtotal,
+                        "ImponibileImporto": fpaToEur(
+                            line.price_subtotal, invoice, euro
+                        ),
                         "Imposta": 0.0,
                         "EsigibilitaIVA": tax_id.payability,
                     }
@@ -177,7 +185,9 @@ class WizardExportFatturapa(models.TransientModel):
                             tax_id.law_reference, 100
                         )
                 else:
-                    out[key]["ImponibileImporto"] += line.price_subtotal
+                    out[key]["ImponibileImporto"] += fpaToEur(
+                        line.price_subtotal, invoice, euro
+                    )
                     out[key]["Imposta"] += 0.0
         out.update(out_computed)
         return out
@@ -189,6 +199,19 @@ class WizardExportFatturapa(models.TransientModel):
         (and helper functions) passed to template
         """
         return template_values
+
+    @api.model
+    def get_e_invoice_lines(self, invoice):
+        """
+        Invoice lines are not all to be translated to e-invoice lines.
+
+        For instance, some invoice lines will be translated
+        to DatiCassaPrevidenziale nodes.
+        """
+        return invoice.invoice_line_ids.sorted(
+            key=lambda l: (-l.sequence, l.date, l.move_name, -l.id),
+            reverse=True,
+        )
 
     def group_invoices_by_partner(self):
         def split_list(my_list, size):
@@ -204,11 +227,13 @@ class WizardExportFatturapa(models.TransientModel):
             if invoice.partner_id not in res:
                 res[invoice.partner_id] = []
             res[invoice.partner_id].append(invoice.id)
+
+        company = self.env.company
+        company_max_invoice = company.max_invoice_in_xml
         for partner_id in res.keys():
-            if partner_id.max_invoice_in_xml:
-                res[partner_id] = list(
-                    split_list(res[partner_id], partner_id.max_invoice_in_xml)
-                )
+            max_invoice = partner_id.max_invoice_in_xml or company_max_invoice
+            if max_invoice:
+                res[partner_id] = list(split_list(res[partner_id], max_invoice))
             else:
                 res[partner_id] = [res[partner_id]]
         # The returned dictionary contains a plain res.partner object as key

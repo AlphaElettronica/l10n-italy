@@ -41,6 +41,7 @@ class DeclarationOfIntentYearlyLimit(models.Model):
 
 class DeclarationOfIntent(models.Model):
     _name = "l10n_it_declaration_of_intent.declaration"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
     _description = "Declaration of intent"
     _order = "date_start desc,date_end desc"
 
@@ -192,10 +193,21 @@ class DeclarationOfIntent(models.Model):
             )
         return res
 
-    @api.depends("line_ids", "line_ids.amount", "limit_amount")
+    @api.depends(
+        "line_ids",
+        "line_ids.amount",
+        "limit_amount",
+        "line_ids.invoice_id",
+        "line_ids.invoice_id.state",
+    )
     def _compute_amounts(self):
         for record in self:
-            amount = sum(line.amount for line in record.line_ids)
+            amount = sum(
+                line.amount
+                for line in record.line_ids.filtered(
+                    lambda li: li.invoice_id and li.invoice_id.state == "posted"
+                )
+            )
             # ----- Force value to 0
             if amount < 0.0:
                 amount = 0.0
@@ -277,7 +289,7 @@ class DeclarationOfIntentLine(models.Model):
     )
     amount = fields.Monetary()
     base_amount = fields.Monetary(string="Base Amount")
-    invoice_id = fields.Many2one("account.move", string="Invoice")
+    invoice_id = fields.Many2one("account.move", string="Invoice", ondelete="cascade")
     date_invoice = fields.Date(related="invoice_id.invoice_date", string="Date Invoice")
     company_id = fields.Many2one(
         "res.company", string="Company", related="declaration_id.company_id"

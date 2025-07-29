@@ -97,6 +97,9 @@ class AccountMove(models.Model):
                     continue
 
             invoice.check_declarations_amounts(declarations)
+            declarations_used_amounts = invoice.get_declarations_used_amounts(
+                declarations
+            )
 
             # Assign account move lines to declarations for each invoice
             # Get only lines with taxes
@@ -105,11 +108,11 @@ class AccountMove(models.Model):
                 continue
             # Group lines by tax
             grouped_lines = self.get_move_lines_by_declaration(lines)
-            invoice.update_declarations(declarations, grouped_lines)
+            invoice.update_declarations(declarations_used_amounts, grouped_lines)
 
         return posted
 
-    def update_declarations(self, declarations, grouped_lines):
+    def update_declarations(self, declarations_used_amounts, grouped_lines):
         """
         Update the declarations adding a new line representing this invoice.
 
@@ -125,11 +128,14 @@ class AccountMove(models.Model):
                     amount *= -1
                 # Select right declaration(s)
                 if force_declaration:
-                    declarations = [force_declaration]
+                    declaration_id_to_amount_dict = {force_declaration.id: amount}
                 else:
-                    declarations = declarations
+                    declaration_id_to_amount_dict = declarations_used_amounts
 
-                for declaration in declarations:
+                for declaration_id in declaration_id_to_amount_dict:
+                    declaration = self.env[
+                        "l10n_it_declaration_of_intent.declaration"
+                    ].browse(declaration_id)
                     if tax not in declaration.taxes_ids:
                         continue
                     # avoid creating line with same invoice_id
@@ -137,7 +143,15 @@ class AccountMove(models.Model):
                         lambda line: line.invoice_id == self
                     ).unlink()
                     declaration.line_ids = [
-                        (0, 0, self._prepare_declaration_line(amount, lines, tax)),
+                        (
+                            0,
+                            0,
+                            self._prepare_declaration_line(
+                                declaration_id_to_amount_dict[declaration_id],
+                                lines,
+                                tax,
+                            ),
+                        ),
                     ]
                     # Link declaration to invoice
                     self.declaration_of_intent_ids = [(4, declaration.id)]
@@ -209,6 +223,42 @@ class AccountMove(models.Model):
                 date=self.invoice_date,
             )
         return declarations
+
+    def get_declarations_used_amounts(self, declarations):
+        """Get used amount by declarations for this invoice."""
+        self.ensure_one()
+        declarations_available_amounts = {
+            declaration.id: declaration.available_amount for declaration in declarations
+        }
+        declarations_used_amounts = {}
+        sign = 1 if self.move_type in ["out_invoice", "in_invoice"] else -1
+        for tax_line in self.line_ids.filtered("tax_ids"):
+            amount = sign * tax_line.price_subtotal
+            matching_declarations = declarations.filtered(
+                lambda declaration, line_taxes=tax_line.tax_ids: any(
+                    tax in declaration.taxes_ids for tax in line_taxes
+                )
+            )
+            for declaration in matching_declarations:
+                if declaration.id not in declarations_used_amounts:
+                    declarations_used_amounts[declaration.id] = 0
+
+                if declaration == matching_declarations[-1]:
+                    # If this is the last available declaration,
+                    # assign all the remaining amount.
+                    declaration_used_amount = amount
+                else:
+                    declaration_available_amount = declarations_available_amounts[
+                        declaration.id
+                    ]
+                    declaration_used_amount = min(amount, declaration_available_amount)
+                declarations_available_amounts[
+                    declaration.id
+                ] -= declaration_used_amount
+
+                declarations_used_amounts[declaration.id] += declaration_used_amount
+                amount -= declaration_used_amount
+        return declarations_used_amounts
 
     def check_declarations_amounts(self, declarations):
         """
