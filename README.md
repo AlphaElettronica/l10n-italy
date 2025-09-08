@@ -22,7 +22,7 @@ Available addons
 addon | version | maintainers | summary
 --- | --- | --- | ---
 [account_vat_period_end_statement](account_vat_period_end_statement/) | 14.0.1.2.3 |  | Allow to create the 'VAT Statement'.
-[assets_management](assets_management/) | 14.0.1.6.1 |  | Gestione Cespiti
+[assets_management](assets_management/) | 14.0.1.7.0 |  | Gestione Cespiti
 [currency_rate_update_boi](currency_rate_update_boi/) | 14.0.1.0.0 | <a href='https://github.com/eLBati'><img src='https://github.com/eLBati.png' width='32' height='32' style='border-radius:50%;' alt='eLBati'/></a> | Update exchange rates using www.bancaditalia.it
 [fiscal_epos_print](fiscal_epos_print/) | 14.0.1.0.1 | <a href='https://github.com/eLBati'><img src='https://github.com/eLBati.png' width='32' height='32' style='border-radius:50%;' alt='eLBati'/></a> | ePOS-Print XML Fiscal Printer Driver - Stampanti Epson compatibili: FP81II, FP90III
 [l10n_it_abicab](l10n_it_abicab/) | 14.0.1.0.2 | <a href='https://github.com/Borruso'><img src='https://github.com/Borruso.png' width='32' height='32' style='border-radius:50%;' alt='Borruso'/></a> | Base Bank ABI/CAB codes
@@ -31,7 +31,7 @@ addon | version | maintainers | summary
 [l10n_it_account_stamp](l10n_it_account_stamp/) | 14.0.1.2.0 |  | Gestione automatica dell'imposta di bollo
 [l10n_it_account_tax_kind](l10n_it_account_tax_kind/) | 14.0.1.1.1 |  | Gestione natura delle aliquote IVA
 [l10n_it_amount_to_text](l10n_it_amount_to_text/) | 14.0.1.0.0 |  | Localizza le valute in italiano per amount_to_text
-[l10n_it_appointment_code](l10n_it_appointment_code/) | 14.0.1.0.1 |  | Aggiunge la tabella dei codici carica da usare nelle dichiarazioni fiscali italiane
+[l10n_it_appointment_code](l10n_it_appointment_code/) | 14.0.1.0.2 |  | Aggiunge la tabella dei codici carica da usare nelle dichiarazioni fiscali italiane
 [l10n_it_asset_history_import](l10n_it_asset_history_import/) | 14.0.1.0.0 |  | Cespiti: importazione storico dati
 [l10n_it_asset_history_import_queue](l10n_it_asset_history_import_queue/) | 14.0.1.0.0 | <a href='https://github.com/GSLabit'><img src='https://github.com/GSLabit.png' width='32' height='32' style='border-radius:50%;' alt='GSLabit'/></a> | Cespiti: importazione storico dati in background
 [l10n_it_ateco](l10n_it_ateco/) | 14.0.1.1.0 |  | ITA - Codici Ateco
@@ -78,16 +78,16 @@ addon | version | maintainers | summary
 [l10n_it_location_nuts](l10n_it_location_nuts/) | 14.0.1.1.0 |  | Opzioni NUTS specifiche per l'Italia
 [l10n_it_mis_reports_pl_bs](l10n_it_mis_reports_pl_bs/) | 14.0.1.0.0 | <a href='https://github.com/MarcoCalcagni'><img src='https://github.com/MarcoCalcagni.png' width='32' height='32' style='border-radius:50%;' alt='MarcoCalcagni'/></a> | Modelli "MIS Builder" per il conto economico e lo stato patrimoniale
 [l10n_it_partner_statement_riba](l10n_it_partner_statement_riba/) | 14.0.1.1.0 |  | Visualizzare le RiBa negli estratti conto cliente.
-[l10n_it_payment_reason](l10n_it_payment_reason/) | 14.0.1.1.0 |  | Aggiunge la tabella delle causali di pagamento da usare ad esempio nelle ritenute d'acconto
+[l10n_it_payment_reason](l10n_it_payment_reason/) | 14.0.1.1.1 |  | Aggiunge la tabella delle causali di pagamento da usare ad esempio nelle ritenute d'acconto
 [l10n_it_pec](l10n_it_pec/) | 14.0.1.0.0 |  | Aggiunge il campo email PEC al partner
 [l10n_it_pos_fatturapa](l10n_it_pos_fatturapa/) | 14.0.1.0.0 |  | Gestione dati fattura elettronica del cliente all'internodell'interfaccia del POS
 [l10n_it_pos_fiscalcode](l10n_it_pos_fiscalcode/) | 14.0.1.0.1 | <a href='https://github.com/eLBati'><img src='https://github.com/eLBati.png' width='32' height='32' style='border-radius:50%;' alt='eLBati'/></a> | Gestione codice fiscale del cliente all'interno dell'interfaccia del POS
 [l10n_it_rea](l10n_it_rea/) | 14.0.1.0.4 |  | Gestisce i campi del Repertorio Economico Amministrativo
 [l10n_it_reverse_charge](l10n_it_reverse_charge/) | 14.0.1.2.12 |  | Inversione contabile
 [l10n_it_reverse_charge_start_end_dates](l10n_it_reverse_charge_start_end_dates/) | 14.0.1.0.0 |  | Gestione delle date di competenza per le autofatture in reverse charge
-[l10n_it_riba_queued](l10n_it_riba_queued/) | 14.0.1.1.0 |  | Pagare righe RiBa in modo asincrono.
+[l10n_it_riba_queued](l10n_it_riba_queued/) | 14.0.1.2.0 |  | Pagare righe RiBa in modo asincrono.
 [l10n_it_riba_sale_commission](l10n_it_riba_sale_commission/) | 14.0.1.1.2 | <a href='https://github.com/odooNextev'><img src='https://github.com/odooNextev.png' width='32' height='32' style='border-radius:50%;' alt='odooNextev'/></a> <a href='https://github.com/aleuffre'><img src='https://github.com/aleuffre.png' width='32' height='32' style='border-radius:50%;' alt='aleuffre'/></a> <a href='https://github.com/renda-dev'><img src='https://github.com/renda-dev.png' width='32' height='32' style='border-radius:50%;' alt='renda-dev'/></a> <a href='https://github.com/PicchiSeba'><img src='https://github.com/PicchiSeba.png' width='32' height='32' style='border-radius:50%;' alt='PicchiSeba'/></a> | Modulo ponte tra provvigioni agenti e RiBa
-[l10n_it_ricevute_bancarie](l10n_it_ricevute_bancarie/) | 14.0.1.20.0 |  | Ricevute bancarie
+[l10n_it_ricevute_bancarie](l10n_it_ricevute_bancarie/) | 14.0.1.20.1 |  | Ricevute bancarie
 [l10n_it_sct_cbi](l10n_it_sct_cbi/) | 14.0.1.0.0 | <a href='https://github.com/SirAionTech'><img src='https://github.com/SirAionTech.png' width='32' height='32' style='border-radius:50%;' alt='SirAionTech'/></a> | Usare gli standard CBI per SEPA Credit Transfer
 [l10n_it_sdd_cbi](l10n_it_sdd_cbi/) | 14.0.1.0.1 |  | Create SEPA files for CBI SDD Italy
 [l10n_it_sdi_channel](l10n_it_sdi_channel/) | 14.0.2.4.0 | <a href='https://github.com/sergiocorato'><img src='https://github.com/sergiocorato.png' width='32' height='32' style='border-radius:50%;' alt='sergiocorato'/></a> | Aggiunge il canale di invio/ricezione dei file XML attraverso lo SdI
