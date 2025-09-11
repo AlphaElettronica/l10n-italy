@@ -17,8 +17,8 @@ def migrate(env, version):
         SELECT STRING_AGG(column_name, ', ')
         FROM information_schema.columns
         WHERE table_name = 'account_move'
-        AND table_schema = 'public'
-        AND column_name NOT IN('id')
+            AND table_schema = 'public'
+            AND column_name NOT IN('id')
         ;
         """,
     )
@@ -33,23 +33,33 @@ def migrate(env, version):
     # List of rc invoices
     openupgrade.logged_query(
         cr,
-        """
-        select
-        am.company_id,
-        full_reconcile_id,
-        am.id,
-        inv.rc_purchase_invoice_id,
-        aml.account_id
-        from account_move_line aml
-        join account_move am
-        on am.id = aml.move_id
-        join account_invoice inv
-        on inv.move_id = am.id
-        join account_full_reconcile afr
-        on afr.id = aml.full_reconcile_id
-        where inv.rc_purchase_invoice_id is not null
-        and aml.move_id not in (select ap.move_id from account_payment ap);
-    """,
+    """
+            SELECT
+                am.company_id,
+                full_reconcile_id,
+                am.id,
+                inv.rc_purchase_invoice_id,
+                aml.account_id
+            FROM
+                account_move_line AS aml
+            JOIN
+                account_move AS am
+                ON am.id = aml.move_id
+            JOIN
+                account_invoice AS inv
+                ON inv.move_id = am.id
+            JOIN
+                account_full_reconcile AS afr
+                ON afr.id = aml.full_reconcile_id
+            WHERE
+                inv.rc_purchase_invoice_id IS NOT NULL
+                AND aml.move_id NOT IN (
+                    SELECT
+                        ap.move_id
+                    FROM
+                        account_payment AS ap
+                );
+        """,
     )
 
     res = cr.fetchall()
@@ -59,14 +69,26 @@ def migrate(env, version):
         openupgrade.logged_query(
             cr,
             """
-            select am.currency_id, am.partner_id, am.create_uid, aml.account_id
-            from account_move am join account_move_line aml
-            on am.id = aml.move_id
-            where am.old_invoice_id = {supp_inv}
-            and aml.account_id in (
-                select aa.id from account_account aa
-                where aa.internal_type = 'payable'
-            );
+                SELECT
+                    am.currency_id,
+                    am.partner_id,
+                    am.create_uid,
+                    aml.account_id
+                FROM
+                    account_move AS am
+                JOIN
+                    account_move_line AS aml
+                    ON am.id = aml.move_id
+                WHERE
+                    am.old_invoice_id = {supp_inv}
+                    AND aml.account_id IN (
+                        SELECT
+                            aa.id
+                        FROM
+                            account_account AS aa
+                        WHERE
+                            aa.internal_type = 'payable'
+                    );
             """.format(
                 supp_inv=supp_inv
             ),
@@ -82,18 +104,33 @@ def migrate(env, version):
             openupgrade.logged_query(
                 cr,
                 """
-                    select move_id, full_reconcile_id, id, abs(amount_currency)
-                    from account_move_line
-                    where move_id in (
-                    select move_id from account_move_line
-            where full_reconcile_id = {fr_id}
-            and journal_id in (
-                select payment_journal_id
-                from account_rc_type
-                where method = 'selfinvoice'
-            ))
-            order by full_reconcile_id;
-            """.format(
+                    SELECT
+                        move_id,
+                        full_reconcile_id,
+                        id,
+                        ABS(amount_currency)
+                    FROM
+                        account_move_line
+                    WHERE
+                        move_id IN (
+                            SELECT
+                                move_id
+                            FROM
+                                account_move_line
+                            WHERE
+                                full_reconcile_id = {fr_id}
+                                AND journal_id IN (
+                                    SELECT
+                                        payment_journal_id
+                                    FROM
+                                        account_rc_type
+                                    WHERE
+                                        method = 'selfinvoice'
+                                )
+                        )
+                    ORDER BY
+                        full_reconcile_id;
+              """.format(
                     fr_id=fr_id
                 ),
             )
@@ -104,27 +141,28 @@ def migrate(env, version):
             move_ids = []
             supp_amount = 0
             rc_amount = 0
-            for m, k, v, amnt in cr.fetchall():
-                if k == fr_id:
-                    k = rc_inv
-                    rc_amount = amnt
+            for move_id, full_reconcile_id, move_line_id, currency_amount in cr.fetchall():
+                if full_reconcile_id == fr_id:
+                    full_reconcile_id = rc_inv
+                    rc_amount = currency_amount
                 else:
-                    if rc_amount and rc_amount == amnt:
-                        k = rc_inv
+                    if rc_amount and rc_amount == currency_amount:
+                        full_reconcile_id = rc_inv
                     else:
-                        k = supp_inv
-                        supp_amount = amnt
+                        full_reconcile_id = supp_inv
+                        supp_amount = currency_amount
                 if not move_ids:
-                    move_ids = [(k, m)]
-                move_vals[k] = [v] if k not in move_vals else move_vals[k] + [v]
+                    move_ids = [(full_reconcile_id, move_id)]
+                move_vals[full_reconcile_id] = [move_line_id] if full_reconcile_id not in move_vals else move_vals[full_reconcile_id] + [move_line_id]
 
             # clone payment move and append to list
             openupgrade.logged_query(
                 cr,
                 """
-                insert into account_move ({move_fields})
-                {query_move} where id = {move_id}
-                returning id;
+                INSERT INTO account_move ({move_fields})
+                {query_move}
+                WHERE id = {move_id}
+                RETURNING id;
                 """.format(
                     move_fields=move_fields,
                     query_move=query_move,
@@ -141,16 +179,41 @@ def migrate(env, version):
                 openupgrade.logged_query(
                     cr,
                     """
-                    insert into account_payment
-                    (move_id, is_reconciled, is_matched, is_internal_transfer,
-                    payment_method_id, amount, payment_type, partner_type,
-                    currency_id, partner_id, destination_account_id, create_uid,
-                    create_date, write_uid, write_date)
-                    values
-                    ({move_id}, 't', 't', 'f', {method}, {amount}, {payment_type},
-                    {partner_type}, {currency_id}, {partner_id}, {dest_acc_id},
-                    {create_uid}, NOW(), {write_uid}, NOW())
-                    returning id;
+                    INSERT INTO account_payment (
+                        move_id,
+                        is_reconciled,
+                        is_matched,
+                        is_internal_transfer,
+                        payment_method_id,
+                        amount,
+                        payment_type,
+                        partner_type,
+                        currency_id,
+                        partner_id,
+                        destination_account_id,
+                        create_uid,
+                        create_date,
+                        write_uid,
+                        write_date
+                    )
+                    VALUES (
+                        {move_id},
+                        't',
+                        't',
+                        'f',
+                        {method},
+                        {amount},
+                        {payment_type},
+                        {partner_type},
+                        {currency_id},
+                        {partner_id},
+                        {dest_acc_id},
+                        {create_uid},
+                        NOW(),
+                        {write_uid},
+                        NOW()
+                    )
+                    RETURNING id;
                     """.format(
                         move_id=move_id,
                         method=1 if inv == supp_inv else 2,
@@ -159,9 +222,7 @@ def migrate(env, version):
                         partner_type="'supplier'" if inv == supp_inv else "'customer'",
                         currency_id=currency_id,
                         partner_id=partner_id,
-                        dest_acc_id=supp_dest_acc_id
-                        if inv == supp_inv
-                        else rc_dest_acc_id,
+                        dest_acc_id=supp_dest_acc_id if inv == supp_inv else rc_dest_acc_id,
                         create_uid=create_uid,
                         write_uid=create_uid,
                     ),
@@ -172,10 +233,12 @@ def migrate(env, version):
                 openupgrade.logged_query(
                     cr,
                     """
-                    update account_move_line
-                    set move_id = {move_id},
+                    UPDATE account_move_line
+                    SET
+                        move_id = {move_id},
                         payment_id = {payment_id}
-                    where id in ({line_ids});
+                    WHERE
+                        id IN ({line_ids});
                     """.format(
                         move_id=move_id, payment_id=payment_id, line_ids=line_ids
                     ),
@@ -184,9 +247,11 @@ def migrate(env, version):
                 openupgrade.logged_query(
                     cr,
                     """
-                    update account_move
-                    set payment_id = {payment_id}
-                    where id = {move_id};
+                    UPDATE account_move
+                    SET
+                        payment_id = {payment_id}
+                    WHERE
+                        id = {move_id};
                     """.format(
                         payment_id=payment_id, move_id=move_id
                     ),
@@ -218,49 +283,55 @@ def migrate(env, version):
         openupgrade.logged_query(
             cr,
             """
-    update account_move
-    set
-        rc_self_invoice_id = invsi.move_id
-    from account_invoice inv
-        join account_invoice invsi on invsi.id = inv.rc_self_invoice_id
-    where
-        account_move.id = inv.move_id;
-        """,
+                UPDATE account_move
+                SET
+                    rc_self_invoice_id = invsi.move_id
+                FROM
+                    account_invoice inv
+                    JOIN account_invoice invsi ON invsi.id = inv.rc_self_invoice_id
+                WHERE
+                    account_move.id = inv.move_id;
+          """,
         )
         openupgrade.logged_query(
             cr,
             """
-    update account_move
-    set
-        rc_purchase_invoice_id = invpi.move_id
-    from account_invoice inv
-        join account_invoice invpi on invpi.id = inv.rc_purchase_invoice_id
-    where
-        account_move.id = inv.move_id;
-        """,
+                UPDATE account_move
+                SET
+                    rc_purchase_invoice_id = invpi.move_id
+                FROM
+                    account_invoice inv
+                    JOIN account_invoice invpi ON invpi.id = inv.rc_purchase_invoice_id
+                WHERE
+                    account_move.id = inv.move_id;
+            """,
         )
         openupgrade.logged_query(
             cr,
             """
-    update account_move
-    set
-        rc_self_purchase_invoice_id = invspi.move_id
-    from account_invoice inv
-        join account_invoice invspi on invspi.id = inv.rc_self_purchase_invoice_id
-    where
-        account_move.id = inv.move_id;
-        """,
+                UPDATE account_move
+                SET
+                    rc_self_purchase_invoice_id = invspi.move_id
+                FROM
+                    account_invoice inv
+                    JOIN account_invoice invspi ON invspi.id = inv.rc_self_purchase_invoice_id
+                WHERE
+                    account_move.id = inv.move_id;
+            """,
         )
 
         openupgrade.logged_query(
             cr,
             """
-    update account_move_line aml
-    set
-        rc = invl.rc
-    from account_invoice_line invl
-        join account_invoice inv on inv.id = invl.invoice_id
-    where
-        aml.move_id = inv.move_id;
-        """,
+                UPDATE
+                    account_move_line aml
+                SET
+                    rc = invl.rc
+                FROM
+                    account_invoice_line invl
+                JOIN
+                    account_invoice inv ON inv.id = invl.invoice_id
+                WHERE
+                    aml.move_id = inv.move_id;
+            """,
         )
