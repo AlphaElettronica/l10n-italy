@@ -3,6 +3,8 @@
 
 from openupgradelib import openupgrade
 
+import logging
+logger = logging.getLogger(__name__)
 
 @openupgrade.migrate()
 def migrate(env, version):
@@ -62,10 +64,11 @@ def migrate(env, version):
         """,
     )
 
-    res = cr.fetchall()
+    rc_invoices = cr.fetchall()
 
-    for r in res:
-        company_id, fr_id, rc_inv, supp_inv, rc_dest_acc_id = r
+    error_move_ids = []
+    for r in rc_invoices:
+        company_id, fr_id, rc_invoice_id, supplier_inv, rc_dest_acc_id = r
         openupgrade.logged_query(
             cr,
             """
@@ -90,9 +93,10 @@ def migrate(env, version):
                             aa.internal_type = 'payable'
                     );
             """.format(
-                supp_inv=supp_inv
+            supp_inv=supplier_inv
             ),
         )
+
         payment_result = cr.fetchall()
         if payment_result:
             payment_vals = payment_result[0]
@@ -141,19 +145,24 @@ def migrate(env, version):
             move_ids = []
             supp_amount = 0
             rc_amount = 0
+
             for move_id, full_reconcile_id, move_line_id, currency_amount in cr.fetchall():
                 if full_reconcile_id == fr_id:
-                    full_reconcile_id = rc_inv
+                    full_reconcile_id = rc_invoice_id
                     rc_amount = currency_amount
                 else:
                     if rc_amount and rc_amount == currency_amount:
-                        full_reconcile_id = rc_inv
+                        full_reconcile_id = rc_invoice_id
                     else:
-                        full_reconcile_id = supp_inv
+                        full_reconcile_id = supplier_inv
                         supp_amount = currency_amount
                 if not move_ids:
                     move_ids = [(full_reconcile_id, move_id)]
                 move_vals[full_reconcile_id] = [move_line_id] if full_reconcile_id not in move_vals else move_vals[full_reconcile_id] + [move_line_id]
+
+            if not move_ids:
+                error_move_ids.append(fr_id)
+                continue
 
             # clone payment move and append to list
             openupgrade.logged_query(
@@ -170,7 +179,7 @@ def migrate(env, version):
                 ),
             )
             move_ids.append(
-                (supp_inv if move_ids[0] == rc_inv else rc_inv, cr.fetchone()[0])
+                (supplier_inv if move_ids[0] == rc_invoice_id else rc_invoice_id, cr.fetchone()[0])
             )
 
             # create an account_payment record for every payment move
@@ -216,13 +225,15 @@ def migrate(env, version):
                     RETURNING id;
                     """.format(
                         move_id=move_id,
-                        method=1 if inv == supp_inv else 2,
-                        amount=supp_amount if inv == supp_inv else rc_amount,
-                        payment_type="'outbound'" if inv == supp_inv else "'inbound'",
-                        partner_type="'supplier'" if inv == supp_inv else "'customer'",
+                        method=1 if inv == supplier_inv else 2,
+                        amount=supp_amount if inv == supplier_inv else rc_amount,
+                        payment_type="'outbound'" if inv == supplier_inv else "'inbound'",
+                        partner_type="'supplier'" if inv == supplier_inv else "'customer'",
                         currency_id=currency_id,
                         partner_id=partner_id,
-                        dest_acc_id=supp_dest_acc_id if inv == supp_inv else rc_dest_acc_id,
+                        dest_acc_id=supp_dest_acc_id
+                        if inv == supplier_inv
+                        else rc_dest_acc_id,
                         create_uid=create_uid,
                         write_uid=create_uid,
                     ),
@@ -335,3 +346,5 @@ def migrate(env, version):
                     aml.move_id = inv.move_id;
             """,
         )
+
+    logger.error("RECONCILE ERRORE: {}".format(error_move_ids))
