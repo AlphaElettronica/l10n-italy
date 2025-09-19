@@ -4,6 +4,9 @@ from openupgradelib import openupgrade
 from psycopg2 import sql
 
 from odoo import SUPERUSER_ID, api
+import logging
+
+_logger = logging.getLogger(__name__)
 
 OLD_MODULE_NAME = "l10n_it_dichiarazione_intento"
 NEW_MODULE_NAME = "l10n_it_declaration_of_intent"
@@ -16,6 +19,7 @@ def migrate_old_module(cr):
     to this module.
     """
     env = api.Environment(cr, SUPERUSER_ID, {})
+    migration_alpha_custom(env)
 
     old_sequence = env["ir.model.data"].get_object(
         NEW_MODULE_NAME, "dichiarazione_intento_seq"
@@ -150,6 +154,47 @@ WHERE
     AND ((ail.uom_id IS NULL AND aml.product_uom_id IS NULL)
         OR ail.uom_id = aml.product_uom_id)
 """
+    openupgrade.logged_query(
+        env.cr,
+        query,
+    )
+
+
+def migration_alpha_custom(env):
+    # Update invoice_id in declaration line
+    # from pointing to account.invoice
+    # to pointing to account.move
+    drop_sql = sql.SQL("ALTER TABLE {} DROP CONSTRAINT {}")
+    table = "dichiarazione_intento_line"
+    column = "invoice_id"
+    # drop the dichiarazione_intento_line table and invoice_id column constraint
+    env.cr.execute(
+        """
+            SELECT constraint_name
+            FROM information_schema.table_constraints
+            WHERE constraint_type = 'FOREIGN KEY' AND table_name = %s
+            AND constraint_name like %s
+        """,
+        (table, "%%%s%%" % column),
+    )
+    for constraint in (row[0] for row in env.cr.fetchall()):
+        openupgrade.logged_query(
+            env.cr,
+            drop_sql.format(
+                sql.Identifier(table),
+                sql.Identifier(constraint),
+            ),
+        )
+    _logger.info("UPDATING INVOICE ID DECLARATIONNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN")
+    query = """
+        UPDATE dichiarazione_intento_line dil
+        SET
+            invoice_id = ai.move_id
+        FROM account_invoice ai
+        JOIN account_move am on am.id = ai.move_id
+        WHERE
+            ai.id = dil.invoice_id
+    """
     openupgrade.logged_query(
         env.cr,
         query,
