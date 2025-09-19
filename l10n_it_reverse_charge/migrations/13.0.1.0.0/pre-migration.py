@@ -164,23 +164,25 @@ def migrate(env, version):
                 error_move_ids.append(fr_id)
                 continue
 
-            # clone payment move and append to list
-            openupgrade.logged_query(
-                cr,
-                """
-                INSERT INTO account_move ({move_fields})
-                {query_move}
-                WHERE id = {move_id}
-                RETURNING id;
-                """.format(
-                    move_fields=move_fields,
-                    query_move=query_move,
-                    move_id=move_ids[0][1],
-                ),
-            )
-            move_ids.append(
-                (supplier_inv if move_ids[0] == rc_invoice_id else rc_invoice_id, cr.fetchone()[0])
-            )
+            if move_ids:
+                # clone payment move and append to list
+                openupgrade.logged_query(
+                    cr,
+                    """
+                    INSERT INTO account_move ({move_fields})
+                    {query_move}
+                    WHERE id = {move_id}
+                    RETURNING id;
+                    """.format(
+                        move_fields=move_fields,
+                        query_move=query_move,
+                        move_id=move_ids[0][1],
+                    ),
+                )
+
+                move_ids.append(
+                    (supplier_inv if move_ids[0] == rc_invoice_id else rc_invoice_id, cr.fetchone()[0])
+                )
 
             # create an account_payment record for every payment move
             # update move lines with new move id
